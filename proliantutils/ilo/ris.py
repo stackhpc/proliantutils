@@ -312,6 +312,9 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         :returns the tuple of SmartStorage URI, Headers and settings.
         """
         headers, storage_uri, storage_settings = self._get_storage_resource()
+        # Do not raise exception if there is no ArrayControllers
+        # as Storage can be zero at any point and if we raise
+        # exception it might fail get_server_capabilities().
         if ('links' in storage_settings and
                 'ArrayControllers' in storage_settings['links']):
             # Get the ArrayCOntrollers URI and Settings
@@ -323,28 +326,21 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
                 raise exception.IloError(msg)
 
             return headers, array_uri, array_settings
-        else:
-            msg = ('"links/ArrayControllers" section in SmartStorage'
-                   ' does not exist')
-            raise exception.IloCommandNotSupportedError(msg)
 
     def _create_list_of_array_controllers(self):
         """Creates the list of Array Controller URIs.
 
-        :raises: IloCommandNotSupportedError if the ArrayControllers
-            doesnt have member "Member".
         :returns list of ArrayControllers.
         """
         headers, array_uri, array_settings = (
             self._get_array_controller_resource())
         array_uri_links = []
+        # Do not raise exception if there is no ArrayControllers
+        # as Storage can be zero at any point and if we raise
+        # exception it might fail get_server_capabilities().
         if ('links' in array_settings and
                 'Member' in array_settings['links']):
             array_uri_links = array_settings['links']['Member']
-        else:
-            msg = ('"links/Member" section in ArrayControllers'
-                   ' does not exist')
-            raise exception.IloCommandNotSupportedError(msg)
         return array_uri_links
 
     def _get_drive_type_and_speed(self):
@@ -396,6 +392,9 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         """
         disk_details_list = []
         array_uri_links = self._create_list_of_array_controllers()
+        # Do not raise exception if there is no disk/logical drive
+        # as Storage can be zero at any point and if we raise
+        # exception it might fail get_server_capabilities().
         for array_link in array_uri_links:
             _, _, member_settings = (
                 self._rest_get(array_link['href']))
@@ -412,15 +411,6 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
                         _, _, disk_details = (
                             self._rest_get(diskdrive_uri))
                         disk_details_list.append(disk_details)
-                else:
-                    msg = ('"links/Member" section in %s'
-                           ' does not exist', drive_name)
-                    raise exception.IloCommandNotSupportedError(msg)
-            else:
-                msg = ('"links/%s" section in '
-                       ' ArrayController/links/Member does not exist',
-                       drive_name)
-                raise exception.IloCommandNotSupportedError(msg)
         if disk_details_list:
             return disk_details_list
 
