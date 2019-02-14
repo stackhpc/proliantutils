@@ -1933,19 +1933,6 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
                           self.client._get_array_controller_resource)
         get_mock.assert_called_once_with(array_uri)
 
-    @mock.patch.object(ris.RISOperations, '_get_storage_resource')
-    def test__get_array_controller_resource_not_supported(self,
-                                                          storage_mock):
-        storage_data = json.loads(ris_outputs.STORAGE_SETTINGS)
-        storage_uri = '/rest/v1/Systems/1/SmartStorage'
-        del storage_data['links']['ArrayControllers']
-        storage_mock.return_value = (ris_outputs.GET_HEADERS,
-                                     storage_uri,
-                                     storage_data)
-        self.assertRaises(exception.IloCommandNotSupportedError,
-                          self.client._get_array_controller_resource)
-        storage_mock.assert_called_once_with()
-
     @mock.patch.object(ris.RISOperations, '_get_array_controller_resource')
     def test__create_list_of_array_controllers(self, array_mock):
         array_data = json.loads(ris_outputs.ARRAY_SETTINGS)
@@ -1957,18 +1944,6 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
             [{u'href': u'/rest/v1/Systems/1/SmartStorage/ArrayControllers/0'}])
         uri_links = self.client._create_list_of_array_controllers()
         self.assertEqual(expected_uri_links, uri_links)
-        array_mock.assert_called_once_with()
-
-    @mock.patch.object(ris.RISOperations, '_get_array_controller_resource')
-    def test__create_list_of_array_controllers_fail(self, array_mock):
-        array_data = json.loads(ris_outputs.ARRAY_SETTINGS)
-        array_uri = '/rest/v1/Systems/1/SmartStorage/ArrayControllers'
-        del array_data['links']['Member']
-        array_mock.return_value = (ris_outputs.GET_HEADERS,
-                                   array_uri,
-                                   array_data)
-        self.assertRaises(exception.IloCommandNotSupportedError,
-                          self.client._create_list_of_array_controllers)
         array_mock.assert_called_once_with()
 
     @mock.patch.object(ris.RISOperations, '_get_physical_drive_resource')
@@ -2013,6 +1988,34 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
         expected_out = []
         expected_out.append(json.loads(ris_outputs.LOGICAL_DETAILS))
         self.assertEqual(expected_out, out)
+        array_mock.assert_called_once_with()
+
+    @mock.patch.object(ris.RISOperations, '_create_list_of_array_controllers')
+    @mock.patch.object(ris.RISOperations, '_rest_get')
+    def test__get_drive_resource_no_physical_disk(self, get_mock, array_mock):
+        array_mock.return_value = (
+            [{u'href': u'/rest/v1/Systems/1/SmartStorage/ArrayControllers/0'}])
+        disk_col_no_disk = json.loads(ris_outputs.DISK_COLLECTION_NO_DISK)
+        get_mock.side_effect = [(ris_outputs.GET_HEADERS, 'xyz',
+                                 json.loads(ris_outputs.ARRAY_MEM_SETTINGS)),
+                                (ris_outputs.GET_HEADERS, 'xyz',
+                                 disk_col_no_disk)]
+        out = self.client._get_physical_drive_resource()
+        self.assertIsNone(out)
+        array_mock.assert_called_once_with()
+
+    @mock.patch.object(ris.RISOperations, '_create_list_of_array_controllers')
+    @mock.patch.object(ris.RISOperations, '_rest_get')
+    def test__get_drive_resource_no_logical_drive(self, get_mock, array_mock):
+        array_mock.return_value = (
+            [{u'href': u'/rest/v1/Systems/1/SmartStorage/ArrayControllers/0'}])
+        log_col_no_drive = json.loads(ris_outputs.LOGICAL_COLLECTION_NO_DRIVE)
+        get_mock.side_effect = [(ris_outputs.GET_HEADERS, 'xyz',
+                                 json.loads(ris_outputs.ARRAY_MEM_SETTINGS)),
+                                (ris_outputs.GET_HEADERS, 'xyz',
+                                 log_col_no_drive)]
+        out = self.client._get_physical_drive_resource()
+        self.assertIsNone(out)
         array_mock.assert_called_once_with()
 
     @mock.patch.object(ris.RISOperations, '_get_pci_devices')
