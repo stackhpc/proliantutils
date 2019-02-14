@@ -4188,6 +4188,30 @@ ArrayControllers/0/DiskDrives"
     }
 }
 """
+
+DISK_COLLECTION_NO_DISK = """
+{
+    "@odata.context": "/redfish/v1/$metadata#Systems/Members/1\
+/SmartStorage/ArrayControllers/Members/2/DiskDrives",
+    "@odata.id": "/redfish/v1/Systems/1/SmartStorage/ArrayControllers\
+/2/DiskDrives/",
+    "@odata.type": "\
+#HpSmartStorageDiskDriveCollection.HpSmartStorageDiskDriveCollection",
+    "Description": "HP Smart Storage Disk Drives View",
+    "MemberType": "HpSmartStorageDiskDrive.1",
+    "Members@odata.count": 0,
+    "Name": "HpSmartStorageDiskDrives",
+    "Total": 0,
+    "Type": "Collection.1.0.0",
+    "links": {
+        "self": {
+            "href": "/rest/v1/Systems/1/SmartStorage/ArrayControllers/0\
+/DiskDrives"
+        }
+    }
+}
+"""
+
 DISK_DETAILS_LIST = """
 [{
     "@odata.context": "/redfish/v1/$metadata#Systems/Members/1\
@@ -4258,6 +4282,29 @@ ArrayControllers/Members/0/LogicalDrives",
     }
 }
 """
+LOGICAL_COLLECTION_NO_DRIVE = """
+{
+    "@odata.context": "/redfish/v1/$metadata#Systems/Members/1/SmartStorage/\
+ArrayControllers/Members/0/LogicalDrives",
+    "@odata.id": "/redfish/v1/Systems/1/SmartStorage/ArrayControllers/\
+0/LogicalDrives/",
+    "@odata.type": "\
+#HpSmartStorageLogicalDriveCollection.HpSmartStorageLogicalDriveCollection",
+    "Description": "HP Smart Storage Logical Drives View",
+    "MemberType": "HpSmartStorageLogicalDrive.1",
+    "Members@odata.count": 0,
+    "Name": "HpSmartStorageLogicalDrives",
+    "Total": 0,
+    "Type": "Collection.1.0.0",
+    "links": {
+        "self": {
+            "href": "/rest/v1/Systems/1/SmartStorage/ArrayControllers/0\
+/LogicalDrives"
+        }
+    }
+}
+"""
+
 
 LOGICAL_DETAILS = """
 [{
