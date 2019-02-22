@@ -51,3 +51,9 @@ RAID_6 = 'raid 6'
 RAID_6_0 = 'raid 6+0'
 RAID_1ADM = 'raid 1adm'
 RAID_10ADM = 'raid_10adm'
+
+# Erase patterns
+ERASE_PATTERN_BLOCK = 'SanitizeRestrictedBlockErase'
+ERASE_PATTERN_OVERWRITE = 'SanitizeRestrictedOverwrite'
+ERASE_PATTERN_CRYPTO = 'SanitizeRestrictedCryptoScramble'
+ERASE_PATTERN_ZERO = 'OnePass'

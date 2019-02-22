@@ -1074,6 +1074,27 @@ class RedfishOperations(operations.IloOperations):
         sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
         sushy_system.delete_raid()
 
+    def do_disk_erase(self, disk_type, pattern=None):
+        """Perform the out-of-band sanitize disk erase on the hardware.
+
+        :param disk_type: Media type of disk drives either 'HDD' or 'SSD'.
+        :param pattern: Erase pattern, if nothing passed default
+                        ('overwrite' for 'HDD', and 'block' for 'SSD') will
+                        be used.
+        :raises: IloError, on an error from iLO.
+        """
+        sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
+        sushy_system.do_disk_erase(disk_type, pattern)
+
+    def has_disk_erase_completed(self):
+        """Get out-of-band sanitize disk erase status.
+
+        :returns: True if disk erase completed on all controllers
+                  otherwise False
+        """
+        sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
+        return sushy_system.has_disk_erase_completed()
+
     def get_current_bios_settings(self, only_allowed_settings=True):
         """Get current BIOS settings.
 

@@ -1701,6 +1701,30 @@ class RedfishOperationsTestCase(testtools.TestCase):
         self.assertEqual('PowerOff', result)
 
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_do_disk_erase_hdd(self, get_system_mock):
+        self.rf_client.do_disk_erase('HDD')
+        get_system_mock.return_value.do_disk_erase.assert_called_once_with(
+            'HDD', None)
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_do_disk_erase_ssd(self, get_system_mock):
+        self.rf_client.do_disk_erase('SSD')
+        get_system_mock.return_value.do_disk_erase.assert_called_once_with(
+            'SSD', None)
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_do_disk_erase_ssd_pattern_zero(self, get_system_mock):
+        self.rf_client.do_disk_erase('SSD', 'zero')
+        get_system_mock.return_value.do_disk_erase.assert_called_once_with(
+            'SSD', 'zero')
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_has_disk_erase_completed(self, get_system_mock):
+        (get_system_mock.return_value.
+         has_disk_erase_completed.return_value) = True
+        self.assertEqual(True, self.rf_client.has_disk_erase_completed())
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
     def test_delete_raid_configuration(self, get_system_mock):
         self.rf_client.delete_raid_configuration()
         get_system_mock.return_value.delete_raid.assert_called_once_with()

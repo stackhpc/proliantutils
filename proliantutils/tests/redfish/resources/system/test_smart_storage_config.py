@@ -21,6 +21,8 @@ import testtools
 from proliantutils import exception
 from proliantutils.hpssa import manager
 from proliantutils.redfish.resources.system import smart_storage_config
+from proliantutils.redfish.resources.system.storage import \
+    mappings as storage_map
 
 
 class HPESmartStorageConfigTestCase(testtools.TestCase):
@@ -47,6 +49,9 @@ class HPESmartStorageConfigTestCase(testtools.TestCase):
         self.assertEqual(
             '600508B1001C045A9BAAC9F4F49498AE',
             self.ssc_inst.logical_drives[0].volume_unique_identifier)
+        self.assertEqual(
+            ["2I:1:2", "2I:1:1"],
+            self.ssc_inst.logical_drives[0].data_drives)
         self.assertEqual("/redfish/v1/systems/1/smartstorageconfig/settings/",
                          self.ssc_inst.settings_uri)
 
@@ -198,3 +203,39 @@ class HPESmartStorageConfigTestCase(testtools.TestCase):
         self.ssc_inst.read_raid()
         self.assertTrue(message_mock.called)
         self.assertFalse(format_mock.called)
+
+    def test_disk_erase_hdd(self):
+        settings_uri = "/redfish/v1/systems/1/smartstorageconfig/settings/"
+        self.ssc_inst.disk_erase(['1I:0:1'], 'HDD', None)
+        data = {"Actions": [{"Action": "PhysicalDriveErase",
+                             "ErasePattern": "SanitizeRestrictedOverwrite",
+                             "PhysicalDriveList": ['1I:0:1']}],
+                "DataGuard": "Disabled"}
+        self.ssc_inst._conn.patch.assert_called_once_with(settings_uri,
+                                                          data=data)
+
+    def test_disk_erase_ssd(self):
+        settings_uri = "/redfish/v1/systems/1/smartstorageconfig/settings/"
+        self.ssc_inst.disk_erase(['1I:0:1', '1I:0:2'], 'SSD', None)
+        data = {"Actions": [{"Action": "PhysicalDriveErase",
+                             "ErasePattern": "SanitizeRestrictedBlockErase",
+                             "PhysicalDriveList": ['1I:0:1', '1I:0:2']}],
+                "DataGuard": "Disabled"}
+        self.ssc_inst._conn.patch.assert_called_once_with(settings_uri,
+                                                          data=data)
+
+    def test_disk_erase_ssd_user_pattern_zero(self):
+        settings_uri = "/redfish/v1/systems/1/smartstorageconfig/settings/"
+        self.ssc_inst.disk_erase(['1I:0:1', '1I:0:2'], 'SSD', 'zero')
+        data = {
+            "Actions": [{"Action": "PhysicalDriveErase",
+                         "ErasePattern": storage_map.DISK_ERASE_PATTERN[
+                             'zero'],
+                         "PhysicalDriveList": ['1I:0:1', '1I:0:2']}],
+            "DataGuard": "Disabled"}
+        self.ssc_inst._conn.patch.assert_called_once_with(settings_uri,
+                                                          data=data)
+
+    def test_get_drives_has_raid(self):
+        result = self.ssc_inst.get_drives_has_raid()
+        self.assertEqual(result, ["2I:1:2", "2I:1:1"])

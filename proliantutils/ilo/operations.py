@@ -497,3 +497,27 @@ class IloOperations(object):
                  not supported on the server.
         """
         raise exception.IloCommandNotSupportedError(ERRMSG)
+
+    def has_disk_erase_completed(self):
+        """Get out of band sanitize disk erase status.
+
+        :returns: True if disk erase completed on all controllers
+                  otherwise False
+        :raises: IloError, on an error from iLO.
+        :raises: IloCommandNotSupportedError, if the command is
+                 not supported on the server.
+        """
+        raise exception.IloCommandNotSupportedError(ERRMSG)
+
+    def do_disk_erase(self, disk_type, pattern=None):
+        """Perform the out of band sanitize disk erase on the hardware.
+
+        :param disk_type: Media type of disk drives.
+        :param pattern: Erase pattern, if nothing passed default
+                        ('overwrite' for 'HDD', and 'block' for 'SSD') will
+                        be used.
+        :raises: IloError, on an error from iLO.
+        :raises: IloCommandNotSupportedError, if the command is
+                 not supported on the server.
+        """
+        raise exception.IloCommandNotSupportedError(ERRMSG)

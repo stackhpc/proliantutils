@@ -75,6 +75,8 @@ SUPPORTED_RIS_METHODS = [
 SUPPORTED_REDFISH_METHODS = [
     'create_raid_configuration',
     'delete_raid_configuration',
+    'do_disk_erase',
+    'has_disk_erase_completed',
     'get_product_name',
     'get_host_post_state',
     'get_host_power_status',
@@ -814,3 +816,23 @@ class IloClient(operations.IloOperations):
                  not supported on the server.
         """
         return self._call_method('get_bios_settings_result')
+
+    def has_disk_erase_completed(self):
+        """Get out-of-band sanitize disk erase status.
+
+        :returns: True if disk erase completed on all controllers
+                  otherwise False
+        :raises: IloError, on an error from iLO.
+        """
+        return self._call_method('has_disk_erase_completed')
+
+    def do_disk_erase(self, disk_type, pattern=None):
+        """Perform the out-of-band sanitize disk erase on the hardware.
+
+        :param disk_type: Media type of disk drives.
+        :param pattern: Erase pattern, if nothing passed default
+                        ('overwrite' for 'HDD', and 'block' for 'SSD') will
+                        be used.
+        :raises: IloError, on an error from iLO.
+        """
+        return self._call_method('do_disk_erase', disk_type, pattern)

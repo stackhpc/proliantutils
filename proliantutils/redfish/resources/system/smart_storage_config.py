@@ -18,12 +18,18 @@ from sushy.resources import base
 
 from proliantutils.hpssa import constants
 from proliantutils.hpssa import manager
+from proliantutils.redfish.resources.system.storage import \
+    constants as storage_const
+from proliantutils.redfish.resources.system.storage import \
+    mappings as storage_map
 
 
 LOG = log.get_logger(__name__)
 
 
 class LogicalDriveListField(base.ListField):
+    data_drives = base.Field("DataDrives", adapter=list, default=[])
+
     volume_unique_identifier = base.Field('VolumeUniqueIdentifier',
                                           required=True)
 
@@ -178,3 +184,35 @@ class HPESmartStorageConfig(base.ResourceBase):
             "LogicalDrives": redfish_logical_disk
         }
         self._conn.put(self.settings_uri, data=data)
+
+    def disk_erase(self, disks, disk_type, pattern):
+        """Performs out of band sanitize disk erase on the hardware.
+
+        :param disks: List of location of disk drives.
+        :param disk_type: Media type of disk drives.
+        :param pattern: Erase pattern, if nothing passed default
+                        ('overwrite' for 'HDD', and 'block' for 'SSD') will
+                        be used.
+        """
+        hdd = storage_map.MEDIA_TYPE_MAP_REV[storage_const.MEDIA_TYPE_HDD]
+        if not pattern:
+            erase_pattern = storage_const.ERASE_PATTERN_OVERWRITE if (
+                disk_type == hdd) else storage_const.ERASE_PATTERN_BLOCK
+        else:
+            erase_pattern = storage_map.DISK_ERASE_PATTERN[pattern]
+
+        data = {"Actions": [{"Action": "PhysicalDriveErase",
+                             "ErasePattern": erase_pattern,
+                             "PhysicalDriveList": disks}],
+                "DataGuard": "Disabled"}
+        self._conn.patch(self.settings_uri, data=data)
+
+    def get_drives_has_raid(self):
+        """Return the list of drives have raid
+
+        :return: List of disk drives
+        """
+        drives = []
+        for ld in self.logical_drives:
+            drives.extend(ld.data_drives)
+        return drives

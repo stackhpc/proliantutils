@@ -46,6 +46,9 @@ MEDIA_TYPE_MAP = {
     'HDD': constants.MEDIA_TYPE_HDD
 }
 
+MEDIA_TYPE_MAP_REV = (
+    utils.revert_dictionary(MEDIA_TYPE_MAP))
+
 RAID_LEVEL_MAP = {
     '0': constants.RAID_0,
     '1': constants.RAID_1,
@@ -60,3 +63,10 @@ RAID_LEVEL_MAP = {
 
 RAID_LEVEL_MAP_REV = (
     utils.revert_dictionary(RAID_LEVEL_MAP))
+
+DISK_ERASE_PATTERN = {
+    'block': constants.ERASE_PATTERN_BLOCK,
+    'overwrite': constants.ERASE_PATTERN_OVERWRITE,
+    'crypto': constants.ERASE_PATTERN_CRYPTO,
+    'zero': constants.ERASE_PATTERN_ZERO
+}
