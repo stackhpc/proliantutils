@@ -25,6 +25,10 @@ DRIVER.
 
 import subprocess
 
+from proliantutils import log
+
+LOG = log.get_logger(__name__)
+
 MIN_SUGGESTED_FW_REV = 2.3
 DEFAULT_FW_REV = 2.1
 
@@ -47,7 +51,12 @@ def _exec_ipmitool(driver_info, command):
 
     out = None
     try:
-        out = subprocess.check_output(ipmi_cmd, shell=True)
+        process = subprocess.Popen(ipmi_cmd, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE, shell=True)
+        out, err = process.communicate()
+        LOG.debug(("IPMI Command output: %(out)s and "
+                   "IPMI Command error: %(err)s and returncode: (code)s"),
+                  {'out': out, 'err': err, 'code': process.returncode})
     except Exception:
         pass
     return out
