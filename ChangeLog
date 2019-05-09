@@ -1,6 +1,16 @@
 CHANGES
 =======
 
+2.8.4
+-----
+* Updates ChangeLog
+
+2.8.3
+-----
+* jsonschema 3.0.1: Uncap jsonschema
+* jsonschema 3.0.1: Binds the raid schema to draft-04
+* Fixes an issue with nic capacity calculation
+
 2.8.2
 -----
 * Redfish: Adds changes to support Sushy virtual media
