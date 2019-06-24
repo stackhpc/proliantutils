@@ -208,7 +208,7 @@ class HPESmartStorageConfig(base.ResourceBase):
         self._conn.patch(self.settings_uri, data=data)
 
     def get_drives_has_raid(self):
-        """Return the list of drives have raid
+        """Return the list of physical drives have raid
 
         :return: List of disk drives
         """

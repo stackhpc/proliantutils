@@ -237,5 +237,13 @@ class HPESmartStorageConfigTestCase(testtools.TestCase):
                                                           data=data)
 
     def test_get_drives_has_raid(self):
+        with open('proliantutils/tests/redfish/'
+                  'json_samples/smart_storage_config.json', 'r') as f:
+            ssc_json = json.loads(f.read())
+        ld_mock = mock.MagicMock(
+            spec=smart_storage_config.LogicalDriveListField)
+        ld_mock.data_drives = ssc_json['LogicalDrives'][0]['DataDrives']
+        type(self.ssc_inst).logical_drives = mock.PropertyMock(
+            return_value=[ld_mock])
         result = self.ssc_inst.get_drives_has_raid()
         self.assertEqual(result, ["2I:1:2", "2I:1:1"])

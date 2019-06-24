@@ -86,6 +86,7 @@ SUPPORTED_REDFISH_METHODS = [
     'hold_pwr_btn',
     'get_bios_settings_result',
     'get_current_bios_settings',
+    'get_available_disk_types',
     'get_default_bios_settings',
     'get_pending_bios_settings',
     'set_bios_settings',
@@ -836,3 +837,11 @@ class IloClient(operations.IloOperations):
         :raises: IloError, on an error from iLO.
         """
         return self._call_method('do_disk_erase', disk_type, pattern)
+
+    def get_available_disk_types(self):
+        """Get the list of all disk type available in server
+
+        :returns: A list containing disk types.
+        :raises: IloError, on an error from iLO.
+        """
+        return self._call_method('get_available_disk_types')

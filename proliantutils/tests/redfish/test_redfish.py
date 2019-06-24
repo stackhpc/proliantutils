@@ -1808,3 +1808,10 @@ class RedfishOperationsTestCase(testtools.TestCase):
         actual = self.rf_client.get_bios_settings_result()
         expected = {"status": "success", "results": actual_settings}
         self.assertEqual(expected, actual)
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_get_available_disk_types(self, get_system_mock):
+        get_system_mock.return_value.get_disk_types.return_value = ['HDD',
+                                                                    'SSD']
+        self.assertEqual(
+            ['HDD', 'SSD'], self.rf_client.get_available_disk_types())

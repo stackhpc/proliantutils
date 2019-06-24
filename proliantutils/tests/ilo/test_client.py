@@ -1279,6 +1279,27 @@ class IloClientTestCase(testtools.TestCase):
                                 'not supported',
                                 self.client.get_bios_settings_result)
 
+    @mock.patch.object(client.IloClient, '_call_method')
+    def test_get_available_disk_types(self, call_mock):
+        self.client.get_available_disk_types()
+        call_mock.assert_called_once_with('get_available_disk_types')
+
+    @mock.patch.object(ris.RISOperations, 'get_product_name')
+    def test_get_available_disk_types_gen9(self, get_product_mock):
+        self.client.model = 'Gen9'
+        get_product_mock.return_value = 'ProLiant BL460c Gen9'
+        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
+                                'not supported',
+                                self.client.get_available_disk_types)
+
+    @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
+    def test_get_available_disk_types_gen8(self, get_product_mock):
+        self.client.model = 'Gen8'
+        get_product_mock.return_value = 'ProLiant DL380 G8'
+        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
+                                'not supported',
+                                self.client.get_available_disk_types)
+
 
 class IloRedfishClientTestCase(testtools.TestCase):
 

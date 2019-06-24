@@ -949,7 +949,9 @@ class HPESystemTestCase(testtools.TestCase):
         (get_ssc_by_controller_model_mock.return_value.
          disk_erase.assert_called_once_with(['2I:1:1'], 'SSD', None))
 
-    @mock.patch.object(system.LOG, 'info', autospec=True)
+    @mock.patch.object(system.LOG, 'warn', autospec=True)
+    @mock.patch.object(system.HPESystem,
+                       '_get_disk_properties_by_drive_location')
     @mock.patch.object(system.HPESystem,
                        '_get_drives_has_raid')
     @mock.patch.object(array_controller.HPEArrayControllerCollection,
@@ -962,7 +964,7 @@ class HPESystemTestCase(testtools.TestCase):
             self, array_controller_by_model_mock,
             get_ssc_by_controller_model_mock,
             get_all_controllers_model_mock,
-            drives_raid_mock,
+            drives_raid_mock, get_disk_prop_mock,
             system_log_mock):
         get_all_controllers_model_mock.return_value = [
             'HPE Smart Array P408i-p SR Gen10']
@@ -977,14 +979,24 @@ class HPESystemTestCase(testtools.TestCase):
         self.conn.get.return_value.json.side_effect = [ss_json, acc_json]
         (array_controller_by_model_mock.return_value.physical_drives.
          get_all_hdd_drives_locations.return_value) = ['2I:1:1', '2I:1:2']
+        get_disk_prop_mock.return_value = {
+            'Serial number': 'KWGER73R',
+            'Size(GB)': 600,
+            'Media type': 'HDD',
+            'Location': '2I:1:2'}
         self.sys_inst.do_disk_erase('HDD', None)
         get_ssc_by_controller_model_mock.assert_called_once_with(
             'HPE Smart Array P408i-p SR Gen10')
         (get_ssc_by_controller_model_mock.return_value.
          disk_erase.assert_called_once_with(['2I:1:1'], 'HDD', None))
+        disk_prop = {'Serial number': 'KWGER73R',
+                     'Size(GB)': 600,
+                     'Media type': 'HDD',
+                     'Location': '2I:1:2'}
         system_log_mock.assert_called_once_with(
-            "This disks have raid in it: ['2I:1:2'], skipping disks since "
-            "can't erase disks with raid.")
+            "Skipping disk erase of %(disk_list)s "
+            "with logical volumes on them."
+            % {'disk_list': [disk_prop]})
 
     @mock.patch.object(system.HPESystem,
                        '_get_drives_has_raid')
@@ -1061,3 +1073,57 @@ class HPESystemTestCase(testtools.TestCase):
         result = self.sys_inst._get_drives_has_raid()
         self.assertEqual(result, ["2I:1:2", "2I:1:1"])
         get_smart_storage_config_mock.assert_called_once_with(config_id[0])
+
+    @mock.patch.object(array_controller.HPEArrayControllerCollection,
+                       'get_all_controllers_model')
+    @mock.patch.object(array_controller.HPEArrayControllerCollection,
+                       'array_controller_by_model')
+    def test__get_disk_properties_by_drive_location(
+            self, array_controller_by_model_mock,
+            get_all_controllers_model_mock):
+        get_all_controllers_model_mock.return_value = [
+            'HPE Smart Array P408i-p SR Gen10']
+        with open('proliantutils/tests/redfish/'
+                  'json_samples/smart_storage.json', 'r') as f:
+            ss_json = json.loads(f.read())
+        with open('proliantutils/tests/redfish/'
+                  'json_samples/array_controller_collection.json', 'r') as f:
+            acc_json = json.loads(f.read())
+        self.conn.get.return_value.json.reset_mock()
+        self.conn.get.return_value.json.side_effect = [ss_json, acc_json]
+        prop = {
+            'Serial number': 'KWGER73R',
+            'Size(GB)': 600,
+            'Media type': 'HDD',
+            'Location': '2I:1:2'}
+        (array_controller_by_model_mock.return_value.physical_drives.
+         get_disk_properties_by_drive_location.return_value) = prop
+        result = self.sys_inst._get_disk_properties_by_drive_location(
+            '2I:1:1')
+        self.assertEqual(result, prop)
+
+    @mock.patch.object(array_controller.HPEArrayControllerCollection,
+                       'get_all_controllers_model')
+    @mock.patch.object(array_controller.HPEArrayControllerCollection,
+                       'array_controller_by_model')
+    def test_get_disk_types(
+            self, array_controller_by_model_mock,
+            get_all_controllers_model_mock):
+        get_all_controllers_model_mock.return_value = [
+            'HPE Smart Array P408i-p SR Gen10']
+        with open('proliantutils/tests/redfish/'
+                  'json_samples/smart_storage.json', 'r') as f:
+            ss_json = json.loads(f.read())
+        with open('proliantutils/tests/redfish/'
+                  'json_samples/array_controller_collection.json', 'r') as f:
+            acc_json = json.loads(f.read())
+        self.conn.get.return_value.json.reset_mock()
+        self.conn.get.return_value.json.side_effect = [ss_json, acc_json]
+        (array_controller_by_model_mock.return_value.physical_drives.
+         has_hdd.return_value) = True
+        (array_controller_by_model_mock.return_value.physical_drives.
+         has_ssd.return_value) = False
+        types = ['HDD', 'SSD']
+        self.assertEqual(list(set(types)), self.sys_inst.get_disk_types())
+        array_controller_by_model_mock.assert_called_once_with(
+            'HPE Smart Array P408i-p SR Gen10')

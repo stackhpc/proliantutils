@@ -1250,3 +1250,12 @@ class RedfishOperations(operations.IloOperations):
             raise exception.IloError(msg)
         status = "failed" if len(settings_result) > 1 else "success"
         return {"status": status, "results": settings_result}
+
+    def get_available_disk_types(self):
+        """Get the list of all disk type available in server
+
+        :returns: A list containing disk types
+        :raises: IloError, on an error from iLO.
+        """
+        sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
+        return sushy_system.get_disk_types()

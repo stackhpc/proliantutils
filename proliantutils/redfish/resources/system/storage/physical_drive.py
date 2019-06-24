@@ -34,11 +34,15 @@ class HPEPhysicalDrive(base.ResourceBase):
 
     capacity_mib = base.Field('CapacityMiB', adapter=int)
 
+    capacity_gb = base.Field('CapacityGB', adapter=int)
+
     location = base.Field('Location')
 
     media_type = base.MappedField('MediaType', mappings.MEDIA_TYPE_MAP)
 
     rotational_speed_rpm = base.Field('RotationalSpeedRpm', adapter=int)
+
+    serial_number = base.Field('SerialNumber')
 
 
 class HPEPhysicalDriveCollection(base.ResourceCollectionBase):
@@ -115,3 +119,18 @@ class HPEPhysicalDriveCollection(base.ResourceCollectionBase):
             if member.media_type == constants.MEDIA_TYPE_SSD:
                 ssds.append(member.location)
         return ssds
+
+    def get_disk_properties_by_drive_location(self, location):
+        """Returns disk property of physical drive
+
+        :returns: Disk property of drive.
+        """
+        for member in self.get_members():
+            if member.location == location:
+                prop = {
+                    'Serial number': member.serial_number,
+                    'Size(GB)': member.capacity_gb,
+                    'Media type': mappings.MEDIA_TYPE_MAP_REV[
+                        member.media_type],
+                    'Location': member.location}
+                return prop

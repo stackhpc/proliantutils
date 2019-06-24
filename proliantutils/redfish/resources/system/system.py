@@ -339,6 +339,19 @@ class HPESystem(system.System):
             drives.extend(ssc_obj.get_drives_has_raid())
         return drives
 
+    def _get_disk_properties_by_drive_location(self, location):
+        controllers = (
+            self.smart_storage.array_controllers.get_all_controllers_model())
+        for controller in controllers:
+            controller_obj = (
+                self.smart_storage.array_controllers.array_controller_by_model(
+                    controller))
+            properties = (
+                controller_obj.physical_drives.
+                get_disk_properties_by_drive_location(location))
+            if properties:
+                return properties
+
     def do_disk_erase(self, disk_type, pattern):
         """Performs out-of-band sanitize disk erase on the hardware.
 
@@ -376,25 +389,25 @@ class HPESystem(system.System):
 
                     assigned_disks = self._get_drives_has_raid()
 
-                    unassigned_disks = []
-
-                    not_erasable_disks = []
-
-                    for disk in disks:
-                        if disk in assigned_disks:
-                            not_erasable_disks.append(disk)
-                        else:
-                            unassigned_disks.append(disk)
+                    unassigned_disks = list(set(disks) - set(assigned_disks))
 
                     if unassigned_disks:
                         ssc_obj.disk_erase(unassigned_disks, disk_type,
                                            pattern)
 
-                    if not_erasable_disks:
-                        LOG.info("This disks have raid in it: %(disks)s, "
-                                 "skipping disks since can't erase disks "
-                                 "with raid."
-                                 % {'disks': not_erasable_disks})
+                    if assigned_disks:
+                        disk_list = []
+                        for disk in assigned_disks:
+                            disk_prop = (
+                                self._get_disk_properties_by_drive_location(
+                                    disk))
+                            if disk_prop['Media type'] is disk_type:
+                                disk_list.append(disk_prop)
+
+                        if disk_list:
+                            LOG.warn("Skipping disk erase of %(disk_list)s "
+                                     "with logical volumes on them."
+                                     % {'disk_list': disk_list})
                 else:
                     LOG.warn("Smart array controller: %(controller)s, doesn't "
                              "support sanitize disk erase. All the disks of "
@@ -588,3 +601,29 @@ class HPESystem(system.System):
             # passed by user then
             result = self._post_delete_read_raid()
         return result
+
+    def get_disk_types(self):
+        """Get the list of all disk type available in server
+
+        :returns: A list containing disk types
+        :raises: IloError, on an error from iLO.
+        """
+        disk_types = []
+        try:
+            controllers = (self.smart_storage.array_controllers.
+                           get_all_controllers_model())
+            for controller in controllers:
+                controller_obj = (self.smart_storage.array_controllers.
+                                  array_controller_by_model(controller))
+                if controller_obj.physical_drives.has_rotational:
+                    disk_types.append(storage_map.MEDIA_TYPE_MAP_REV[
+                                      storage_const.MEDIA_TYPE_HDD])
+                if controller_obj.physical_drives.has_ssd:
+                    disk_types.append(storage_map.MEDIA_TYPE_MAP_REV[
+                                      storage_const.MEDIA_TYPE_SSD])
+            return list(set(disk_types))
+        except sushy.exceptions.SushyError as e:
+            msg = ('The Redfish controller failed to get list of disk types. '
+                   'Error: %(error)s'
+                   % {'error': str(e)})
+            raise exception.IloError(msg)

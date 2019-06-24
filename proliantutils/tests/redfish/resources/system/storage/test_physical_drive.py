@@ -39,6 +39,8 @@ class HPEPhysicalDriveTestCase(testtools.TestCase):
     def test__parse_attributes(self):
         self.sys_stor._parse_attributes()
         self.assertEqual('1.0.2', self.sys_stor.redfish_version)
+        self.assertEqual(600, self.sys_stor.capacity_gb)
+        self.assertEqual('KWGER73R', self.sys_stor.serial_number)
 
 
 class HPEPhysicalDriveCollectionTestCase(testtools.TestCase):
@@ -179,3 +181,21 @@ class HPEPhysicalDriveCollectionTestCase(testtools.TestCase):
         expected = set([10000])
         self.assertEqual(expected,
                          self.sys_stor_col.drive_rotational_speed_rpm)
+
+    def test_get_disk_properties_by_drive_location(self):
+        self.conn.get.return_value.json.reset_mock()
+        path = ('proliantutils/tests/redfish/json_samples/'
+                'disk_drive.json')
+        with open(path, 'r') as f:
+            dr_json = json.loads(f.read())
+            val = [dr_json['drive1'], dr_json['drive2']]
+            self.conn.get.return_value.json.side_effect = val
+        result = {
+            'Serial number': 'KWGER73R',
+            'Size(GB)': 600,
+            'Media type': 'HDD',
+            'Location': '1I:0:1'}
+        self.assertEqual(result,
+                         self.sys_stor_col.
+                         get_disk_properties_by_drive_location(
+                             '1I:0:1'))
