@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import six
 import sys
 
 import mock
@@ -26,4 +27,4 @@ if not ironic_python_agent:
     ipa_mock.hardware.GenericHardwareManager = mock.MagicMock
     mock.MagicMock.erase_devices = mock.MagicMock(name='erase_devices')
     if 'proliantutils.ipa_hw_manager' in sys.modules:
-        reload(sys.modules['proliantutils.ipa_hw_manager'])
+        six.moves.reload_module('proliantutils.ipa_hw_manager')
