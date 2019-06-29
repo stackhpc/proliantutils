@@ -60,6 +60,10 @@ class HPESushy(sushy.Sushy):
             root_prefix=root_prefix, verify=verify, auth=auth,
             connector=prutils_connector.HPEConnector(base_url, verify=verify))
 
+    def close(self):
+        if self._conn:
+            self._conn.close()
+
     def get_system_collection_path(self):
         return utils.get_subresource_path_by(self, 'Systems')
 

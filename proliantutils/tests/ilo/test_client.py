@@ -26,6 +26,104 @@ from proliantutils.ilo.snmp import snmp_cpqdisk_sizes
 from proliantutils.redfish import redfish
 
 
+def get_cls_wrapper(cls, cache=True):
+    original_cls = cls
+    cls = client.cache_node(cache)(cls)
+    return (original_cls, cls)
+
+
+class IloCacheNodeTestCase(testtools.TestCase):
+
+    def test_cache_node_cache_true(self):
+
+        class Dummyclass1(object):
+            pass
+
+        original_cls, decorated_cls = get_cls_wrapper(Dummyclass1)
+        self.assertNotEqual(id(original_cls), id(decorated_cls))
+
+    def test_cache_node_cache_false(self):
+
+        class Dummyclass2(object):
+            pass
+
+        original_cls, decorated_cls = get_cls_wrapper(Dummyclass2,
+                                                      cache=False)
+        self.assertEqual(id(original_cls), id(decorated_cls))
+
+
+class IloClientWrapperTestCase(testtools.TestCase):
+
+    class DummyClass(object):
+        def __init__(self, ip, name):
+            self._ip = ip
+            self._name = name
+
+    original_cls, decorated_cls = get_cls_wrapper(DummyClass)
+
+    wrapper_cls = decorated_cls.__class__
+
+    @mock.patch.object(wrapper_cls, '_create_instance')
+    @mock.patch.object(wrapper_cls, '_if_not_exists')
+    def test___call___new(self, exists_mock, create_mock):
+        exists_mock.return_value = True
+        try:
+            wrapper_obj = IloClientWrapperTestCase.wrapper_cls(
+                IloClientWrapperTestCase.original_cls)
+            wrapper_obj('a.b.c.d', 'abcd')
+        except KeyError:
+            pass
+        exists_mock.assert_called_once_with('a.b.c.d')
+        create_mock.assert_called_once_with('a.b.c.d', 'abcd')
+
+    @mock.patch.object(wrapper_cls, '_create_instance')
+    @mock.patch.object(wrapper_cls, '_if_not_exists')
+    def test___call___already_created(self, exists_mock, create_mock):
+        exists_mock.return_value = False
+        try:
+            wrapper_obj = IloClientWrapperTestCase.wrapper_cls(
+                IloClientWrapperTestCase.original_cls)
+            wrapper_obj('a.b.c.d', 'abcd')
+        except KeyError:
+            pass
+        exists_mock.assert_called_once_with('a.b.c.d')
+        create_mock.assert_not_called()
+
+    @mock.patch.object(original_cls, '__init__')
+    @mock.patch.object(wrapper_cls, '_pop_oldest_node')
+    def test__create_instance(self, pop_mock, init_mock):
+        init_mock.return_value = None
+        wrapper_obj = IloClientWrapperTestCase.wrapper_cls(
+            IloClientWrapperTestCase.original_cls)
+        wrapper_obj.MAX_CACHE_SIZE = 2
+        wrapper_obj._create_instance('a.b.c.d', 'abcd')
+        init_mock.assert_called_once_with('a.b.c.d', 'abcd')
+        pop_mock.assert_not_called()
+
+    @mock.patch.object(original_cls, '__init__')
+    @mock.patch.object(wrapper_cls, '_pop_oldest_node')
+    def test__create_instance_max_size(self, pop_mock, init_mock):
+        init_mock.return_value = None
+        wrapper_obj = IloClientWrapperTestCase.wrapper_cls(
+            IloClientWrapperTestCase.original_cls)
+        wrapper_obj.MAX_CACHE_SIZE = 2
+        wrapper_obj._create_instance('a.b.c.d', 'abcd')
+        wrapper_obj._create_instance('e.f.g.h', 'efgh')
+        wrapper_obj._create_instance('i.j.k.l', 'ijkl')
+        pop_mock.assert_called_once_with()
+
+    def test__pop_oldest_node(self):
+        wrapper_obj = IloClientWrapperTestCase.wrapper_cls(
+            IloClientWrapperTestCase.original_cls)
+        wrapper_obj.MAX_CACHE_SIZE = 2
+        wrapper_obj('a.b.c.d', 'abcd')
+        wrapper_obj('e.f.g.h', 'efgh')
+        wrapper_obj('i.j.k.l', 'ijkl')
+        self.assertIn('i.j.k.l', wrapper_obj._instances)
+        self.assertIn('e.f.g.h', wrapper_obj._instances)
+        self.assertNotIn('a.b.c.d', wrapper_obj._instances)
+
+
 class IloClientInitTestCase(testtools.TestCase):
 
     @mock.patch.object(ribcl, 'RIBCLOperations')
@@ -35,10 +133,10 @@ class IloClientInitTestCase(testtools.TestCase):
         ribcl_mock.return_value = ribcl_obj_mock
         ribcl_obj_mock.get_product_name.return_value = 'product'
 
-        c = client.IloClient("1.2.3.4", "admin", "Admin",
-                             timeout=120,  port=4430,
-                             bios_password='foo',
-                             cacert='/somewhere')
+        c = client.IloClient.cls("1.2.3.4", "admin", "Admin",
+                                 timeout=120,  port=4430,
+                                 bios_password='foo',
+                                 cacert='/somewhere')
 
         ris_mock.assert_called_once_with(
             "1.2.3.4", "admin", "Admin", bios_password='foo',
@@ -57,10 +155,10 @@ class IloClientInitTestCase(testtools.TestCase):
         ribcl_mock.return_value = ribcl_obj_mock
         ribcl_obj_mock.get_product_name.return_value = 'product'
 
-        c = client.IloClient("FE80::9AF2:B3FF:FEEE:F884%eth0", "admin",
-                             "Admin", timeout=120,  port=4430,
-                             bios_password='foo',
-                             cacert='/somewhere')
+        c = client.IloClient.cls("FE80::9AF2:B3FF:FEEE:F884%eth0", "admin",
+                                 "Admin", timeout=120,  port=4430,
+                                 bios_password='foo',
+                                 cacert='/somewhere')
 
         ris_mock.assert_called_once_with(
             "[FE80::9AF2:B3FF:FEEE:F884%eth0]",
@@ -82,10 +180,10 @@ class IloClientInitTestCase(testtools.TestCase):
         ribcl_mock.return_value = ribcl_obj_mock
         ribcl_obj_mock.get_product_name.return_value = 'product'
 
-        c = client.IloClient("2001:0db8:85a3::8a2e:0370:7334", "admin",
-                             "Admin", timeout=120,  port=4430,
-                             bios_password='foo',
-                             cacert='/somewhere')
+        c = client.IloClient.cls("2001:0db8:85a3::8a2e:0370:7334", "admin",
+                                 "Admin", timeout=120,  port=4430,
+                                 bios_password='foo',
+                                 cacert='/somewhere')
 
         ris_mock.assert_called_once_with(
             "[2001:0db8:85a3::8a2e:0370:7334]",
@@ -108,10 +206,10 @@ class IloClientInitTestCase(testtools.TestCase):
         ribcl_mock.return_value = ribcl_obj_mock
         ribcl_obj_mock.get_product_name.return_value = 'ProLiant DL180 Gen10'
 
-        c = client.IloClient("1.2.3.4", "admin", "Admin",
-                             timeout=120,  port=4430,
-                             bios_password='foo',
-                             cacert='/somewhere')
+        c = client.IloClient.cls("1.2.3.4", "admin", "Admin",
+                                 timeout=120,  port=4430,
+                                 bios_password='foo',
+                                 cacert='/somewhere')
 
         ribcl_mock.assert_called_once_with(
             "1.2.3.4", "admin", "Admin", 120, 4430, cacert='/somewhere')
@@ -135,10 +233,10 @@ class IloClientInitTestCase(testtools.TestCase):
         ribcl_obj_mock.get_product_name.side_effect = (
             exception.IloError('RIBCL is disabled'))
 
-        c = client.IloClient("1.2.3.4", "admin", "Admin",
-                             timeout=120,  port=4430,
-                             bios_password='foo',
-                             cacert='/somewhere')
+        c = client.IloClient.cls("1.2.3.4", "admin", "Admin",
+                                 timeout=120,  port=4430,
+                                 bios_password='foo',
+                                 cacert='/somewhere')
 
         ribcl_mock.assert_called_once_with(
             "1.2.3.4", "admin", "Admin", 120, 4430, cacert='/somewhere')
@@ -157,11 +255,11 @@ class IloClientInitTestCase(testtools.TestCase):
     @mock.patch.object(redfish, 'RedfishOperations')
     def test_init_with_use_redfish_only_set(
             self, redfish_mock, ribcl_mock):
-        c = client.IloClient("1.2.3.4", "admin", "Admin",
-                             timeout=120,  port=4430,
-                             bios_password='foo', cacert='/somewhere',
-                             use_redfish_only=True)
 
+        c = client.IloClient.cls("1.2.3.4", "admin", "Admin",
+                                 timeout=120,  port=4430,
+                                 bios_password='foo', cacert='/somewhere',
+                                 use_redfish_only=True)
         ribcl_mock.assert_called_once_with(
             "1.2.3.4", "admin", "Admin", 120, 4430, cacert='/somewhere')
         redfish_mock.assert_called_once_with(
@@ -176,7 +274,7 @@ class IloClientInitTestCase(testtools.TestCase):
         self.assertFalse(hasattr(c, 'ris'))
         self.assertTrue(c.use_redfish_only)
 
-    @mock.patch.object(client.IloClient, '_validate_snmp')
+    @mock.patch.object(client.IloClient.cls, '_validate_snmp')
     @mock.patch.object(ribcl, 'RIBCLOperations')
     @mock.patch.object(ris, 'RISOperations')
     def test_init_snmp(self, ris_mock, ribcl_mock, snmp_mock):
@@ -189,11 +287,12 @@ class IloClientInitTestCase(testtools.TestCase):
                             'priv_protocol': 'AES',
                             'auth_priv_pp': '4321',
                             'snmp_inspection': 'true'}
-        c = client.IloClient("1.2.3.4", "admin", "Admin",
-                             timeout=120,  port=4430,
-                             bios_password='foo',
-                             cacert='/somewhere',
-                             snmp_credentials=snmp_credentials)
+
+        c = client.IloClient.cls("1.2.3.4", "admin", "Admin",
+                                 timeout=120,  port=4430,
+                                 bios_password='foo',
+                                 cacert='/somewhere',
+                                 snmp_credentials=snmp_credentials)
 
         ris_mock.assert_called_once_with(
             "1.2.3.4", "admin", "Admin", bios_password='foo',
@@ -206,7 +305,7 @@ class IloClientInitTestCase(testtools.TestCase):
         self.assertEqual('product', c.model)
         self.assertTrue(snmp_mock.called)
 
-    @mock.patch.object(client.IloClient, '_validate_snmp')
+    @mock.patch.object(client.IloClient.cls, '_validate_snmp')
     @mock.patch.object(ribcl, 'RIBCLOperations')
     @mock.patch.object(ris, 'RISOperations')
     def test_init_snmp_raises(self, ris_mock, ribcl_mock, snmp_mock):
@@ -218,7 +317,8 @@ class IloClientInitTestCase(testtools.TestCase):
                             'auth_protocol': 'SHA',
                             'priv_protocol': 'AES',
                             'snmp_inspection': 'true'}
-        self.assertRaises(exception.IloInvalidInputError, client.IloClient,
+
+        self.assertRaises(exception.IloInvalidInputError, client.IloClient.cls,
                           "1.2.3.4", "admin", "Admin",
                           timeout=120,  port=4430,
                           bios_password='foo',
@@ -244,8 +344,8 @@ class IloClientSNMPValidateTestCase(testtools.TestCase):
                 'auth_priv_pp': '4321',
                 'snmp_inspection': True}
         self.snmp_credentials = cred
-        self.client = client.IloClient("1.2.3.4", "admin", "Admin",
-                                       snmp_credentials=cred)
+        self.client = client.IloClient.cls("1.2.3.4", "admin", "Admin",
+                                           snmp_credentials=cred)
         self.assertEqual(self.client.snmp_credentials, cred)
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
@@ -256,7 +356,7 @@ class IloClientSNMPValidateTestCase(testtools.TestCase):
                 'auth_prot_pp': '1234',
                 'snmp_inspection': True}
         self.assertRaises(exception.IloInvalidInputError,
-                          client.IloClient,
+                          client.IloClient.cls,
                           "1.2.3.4", "admin", "Admin",
                           snmp_credentials=cred)
 
@@ -268,7 +368,7 @@ class IloClientSNMPValidateTestCase(testtools.TestCase):
                 'auth_priv_pp': '4321',
                 'snmp_inspection': True}
         self.assertRaises(exception.IloInvalidInputError,
-                          client.IloClient,
+                          client.IloClient.cls,
                           "1.2.3.4", "admin", "Admin",
                           snmp_credentials=cred)
 
@@ -278,8 +378,8 @@ class IloClientSNMPValidateTestCase(testtools.TestCase):
                 'auth_prot_pp': '1234',
                 'auth_priv_pp': '4321',
                 'snmp_inspection': True}
-        self.client = client.IloClient("1.2.3.4", "admin", "Admin",
-                                       snmp_credentials=cred)
+        self.client = client.IloClient.cls("1.2.3.4", "admin", "Admin",
+                                           snmp_credentials=cred)
         self.assertEqual(self.client.snmp_credentials, cred)
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
@@ -290,7 +390,7 @@ class IloClientSNMPValidateTestCase(testtools.TestCase):
                 'auth_prot_pp': '1234',
                 'snmp_inspection': True}
         self.assertRaises(exception.IloInvalidInputError,
-                          client.IloClient,
+                          client.IloClient.cls,
                           "1.2.3.4", "admin", "Admin",
                           snmp_credentials=cred)
 
@@ -301,7 +401,7 @@ class IloClientTestCase(testtools.TestCase):
     def setUp(self, product_mock):
         super(IloClientTestCase, self).setUp()
         product_mock.return_value = 'Gen8'
-        self.client = client.IloClient("1.2.3.4", "admin", "Admin")
+        self.client = client.IloClient.cls("1.2.3.4", "admin", "Admin")
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_all_licenses')
     def test__call_method_ribcl(self, license_mock):
@@ -340,7 +440,7 @@ class IloClientTestCase(testtools.TestCase):
     def test__call_method_redfish_1(self, redfish_mock,
                                     ribcl_product_name_mock):
         ribcl_product_name_mock.return_value = 'Gen10'
-        self.client = client.IloClient("1.2.3.4", "admin", "secret")
+        self.client = client.IloClient.cls("1.2.3.4", "admin", "secret")
         redfish_get_host_power_mock = (redfish.RedfishOperations.return_value.
                                        get_host_power_status)
 
@@ -353,7 +453,7 @@ class IloClientTestCase(testtools.TestCase):
     def test__call_method_redfish_2(self, ribcl_reset_ilo_mock,
                                     redfish_mock, ribcl_product_name_mock):
         ribcl_product_name_mock.return_value = 'Gen10'
-        self.client = client.IloClient("1.2.3.4", "admin", "secret")
+        self.client = client.IloClient.cls("1.2.3.4", "admin", "secret")
 
         self.client._call_method('reset_ilo')
         ribcl_reset_ilo_mock.assert_called_once_with()
@@ -365,7 +465,7 @@ class IloClientTestCase(testtools.TestCase):
         ribcl_product_name_mock.side_effect = (
             exception.IloError('RIBCL is disabled'))
         redfish_mock.return_value.get_product_name.return_value = 'Gen10'
-        self.client = client.IloClient("1.2.3.4", "admin", "secret")
+        self.client = client.IloClient.cls("1.2.3.4", "admin", "secret")
         redfish_get_host_power_mock = (redfish.RedfishOperations.return_value.
                                        get_host_power_status)
 
@@ -379,7 +479,7 @@ class IloClientTestCase(testtools.TestCase):
         ribcl_product_name_mock.side_effect = (
             exception.IloError('RIBCL is disabled'))
         redfish_mock.return_value.get_product_name.return_value = 'Gen10'
-        self.client = client.IloClient("1.2.3.4", "admin", "secret")
+        self.client = client.IloClient.cls("1.2.3.4", "admin", "secret")
 
         self.assertRaises(NotImplementedError,
                           self.client._call_method, 'reset_ilo')
@@ -387,8 +487,8 @@ class IloClientTestCase(testtools.TestCase):
     @mock.patch.object(redfish, 'RedfishOperations',
                        spec_set=True, autospec=True)
     def test__call_method_with_use_redfish_only_set(self, redfish_mock):
-        self.client = client.IloClient("1.2.3.4", "admin", "secret",
-                                       use_redfish_only=True)
+        self.client = client.IloClient.cls("1.2.3.4", "admin", "secret",
+                                           use_redfish_only=True)
         redfish_get_host_power_mock = (
             redfish.RedfishOperations.return_value.get_host_power_status)
 
@@ -399,18 +499,18 @@ class IloClientTestCase(testtools.TestCase):
                        spec_set=True, autospec=True)
     def test__call_method_use_redfish_only_set_but_not_implemented(
             self, redfish_mock):
-        self.client = client.IloClient("1.2.3.4", "admin", "secret",
-                                       use_redfish_only=True)
+        self.client = client.IloClient.cls("1.2.3.4", "admin", "secret",
+                                           use_redfish_only=True)
 
         self.assertRaises(NotImplementedError,
                           self.client._call_method, 'reset_ilo')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_set_http_boot_url(self, call_mock):
         self.client.set_http_boot_url('fake-url')
         call_mock.assert_called_once_with('set_http_boot_url', 'fake-url')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_set_iscsi_info(self, call_mock):
         self.client.set_iscsi_info('iqn.2011-07.com:example:123',
                                    '1', '10.10.1.23', '3260', 'CHAP',
@@ -420,7 +520,7 @@ class IloClientTestCase(testtools.TestCase):
                                           '1', '10.10.1.23', '3260',
                                           'CHAP', 'user', 'password')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_set_iscsi_boot_info(self, call_mock):
         self.client.set_iscsi_boot_info('aa:bb:cc:dd:ee:ff',
                                         'iqn.2011-07.com:example:123',
@@ -431,200 +531,200 @@ class IloClientTestCase(testtools.TestCase):
                                           '1', '10.10.1.23', '3260',
                                           'CHAP', 'user', 'password')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_iscsi_initiator_info(self, call_mock):
         self.client.get_iscsi_initiator_info()
         call_mock.assert_called_once_with('get_iscsi_initiator_info')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_unset_iscsi_info(self, call_mock):
         self.client.unset_iscsi_info()
         call_mock.assert_called_once_with('unset_iscsi_info')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_unset_iscsi_boot_info(self, call_mock):
         self.client.unset_iscsi_boot_info("aa:bb:cc:dd:ee:ff")
         call_mock.assert_called_once_with('unset_iscsi_info')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_set_iscsi_initiator_info(self, call_mock):
         self.client.set_iscsi_initiator_info('iqn.2011-07.com:example:123')
         call_mock.assert_called_once_with('set_iscsi_initiator_info',
                                           'iqn.2011-07.com:example:123')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_product_name(self, call_mock):
         self.client.get_product_name()
         call_mock.assert_called_once_with('get_product_name')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_all_licenses(self, call_mock):
         self.client.get_all_licenses()
         call_mock.assert_called_once_with('get_all_licenses')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_host_power_status(self, call_mock):
         self.client.get_host_power_status()
         call_mock.assert_called_once_with('get_host_power_status')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_http_boot_url(self, call_mock):
         self.client.get_http_boot_url()
         call_mock.assert_called_once_with('get_http_boot_url')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_one_time_boot(self, call_mock):
         self.client.get_one_time_boot()
         call_mock.assert_called_once_with('get_one_time_boot')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_vm_status(self, call_mock):
         self.client.get_vm_status('CDROM')
         call_mock.assert_called_once_with('get_vm_status', 'CDROM')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_press_pwr_btn(self, call_mock):
         self.client.press_pwr_btn()
         call_mock.assert_called_once_with('press_pwr_btn')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_reset_server(self, call_mock):
         self.client.reset_server()
         call_mock.assert_called_once_with('reset_server')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_hold_pwr_btn(self, call_mock):
         self.client.hold_pwr_btn()
         call_mock.assert_called_once_with('hold_pwr_btn')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_set_host_power(self, call_mock):
         self.client.set_host_power('ON')
         call_mock.assert_called_once_with('set_host_power', 'ON')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_set_one_time_boot(self, call_mock):
         self.client.set_one_time_boot('CDROM')
         call_mock.assert_called_once_with('set_one_time_boot', 'CDROM')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_insert_virtual_media(self, call_mock):
         self.client.insert_virtual_media(url='fake-url', device='FLOPPY')
         call_mock.assert_called_once_with('insert_virtual_media', 'fake-url',
                                           'FLOPPY')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_eject_virtual_media(self, call_mock):
         self.client.eject_virtual_media(device='FLOPPY')
         call_mock.assert_called_once_with('eject_virtual_media', 'FLOPPY')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_set_vm_status(self, call_mock):
         self.client.set_vm_status(device='FLOPPY', boot_option='BOOT_ONCE',
                                   write_protect='YES')
         call_mock.assert_called_once_with('set_vm_status', 'FLOPPY',
                                           'BOOT_ONCE', 'YES')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_current_boot_mode(self, call_mock):
         self.client.get_current_boot_mode()
         call_mock.assert_called_once_with('get_current_boot_mode')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_pending_boot_mode(self, call_mock):
         self.client.get_pending_boot_mode()
         call_mock.assert_called_once_with('get_pending_boot_mode')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_supported_boot_mode(self, call_mock):
         self.client.get_supported_boot_mode()
         call_mock.assert_called_once_with('get_supported_boot_mode')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_set_pending_boot_mode(self, call_mock):
         self.client.set_pending_boot_mode('UEFI')
         call_mock.assert_called_once_with('set_pending_boot_mode', 'UEFI')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_persistent_boot_device(self, call_mock):
         self.client.get_persistent_boot_device()
         call_mock.assert_called_once_with('get_persistent_boot_device')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_update_persistent_boot(self, call_mock):
         self.client.update_persistent_boot(['HDD'])
         call_mock.assert_called_once_with('update_persistent_boot', ['HDD'])
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_secure_boot_mode(self, call_mock):
         self.client.get_secure_boot_mode()
         call_mock.assert_called_once_with('get_secure_boot_mode')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_set_secure_boot_mode(self, call_mock):
         self.client.set_secure_boot_mode(True)
         call_mock.assert_called_once_with('set_secure_boot_mode', True)
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_reset_secure_boot_keys(self, call_mock):
         self.client.reset_secure_boot_keys()
         call_mock.assert_called_once_with('reset_secure_boot_keys')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_clear_secure_boot_keys(self, call_mock):
         self.client.clear_secure_boot_keys()
         call_mock.assert_called_once_with('clear_secure_boot_keys')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_reset_ilo_credential(self, call_mock):
         self.client.reset_ilo_credential('password')
         call_mock.assert_called_once_with('reset_ilo_credential', 'password')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_reset_ilo(self, call_mock):
         self.client.reset_ilo()
         call_mock.assert_called_once_with('reset_ilo')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_reset_bios_to_default(self, call_mock):
         self.client.reset_bios_to_default()
         call_mock.assert_called_once_with('reset_bios_to_default')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_host_uuid(self, call_mock):
         self.client.get_host_uuid()
         call_mock.assert_called_once_with('get_host_uuid')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_host_health_data(self, call_mock):
         self.client.get_host_health_data('fake-data')
         call_mock.assert_called_once_with('get_host_health_data', 'fake-data')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_host_health_present_power_reading(self, call_mock):
         self.client.get_host_health_present_power_reading('fake-data')
         call_mock.assert_called_once_with(
             'get_host_health_present_power_reading', 'fake-data')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_host_health_power_supplies(self, call_mock):
         self.client.get_host_health_power_supplies('fake-data')
         call_mock.assert_called_once_with('get_host_health_power_supplies',
                                           'fake-data')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_host_health_fan_sensors(self, call_mock):
         self.client.get_host_health_fan_sensors('fake-data')
         call_mock.assert_called_once_with('get_host_health_fan_sensors',
                                           'fake-data')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_host_health_temperature_sensors(self, call_mock):
         self.client.get_host_health_temperature_sensors('fake-data')
         call_mock.assert_called_once_with(
             'get_host_health_temperature_sensors', 'fake-data')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_host_health_at_a_glance(self, call_mock):
         self.client.get_host_health_at_a_glance('fake-data')
         call_mock.assert_called_once_with('get_host_health_at_a_glance',
@@ -801,12 +901,12 @@ class IloClientTestCase(testtools.TestCase):
                                  'secure_boot': 'true'}
         self.assertEqual(expected_capabilities, capabilities)
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_activate_license(self, call_mock):
         self.client.activate_license('fake-key')
         call_mock.assert_called_once_with('activate_license', 'fake-key')
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_delete_raid_configuration(self, call_mock):
         self.client.delete_raid_configuration()
         call_mock.assert_called_once_with('delete_raid_configuration')
@@ -829,7 +929,7 @@ class IloClientTestCase(testtools.TestCase):
                                 'on ProLiant DL380 G8',
                                 self.client.delete_raid_configuration)
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_do_disk_erase(self, call_mock):
         self.client.do_disk_erase('SSD', None)
         call_mock.assert_called_once_with(
@@ -855,7 +955,7 @@ class IloClientTestCase(testtools.TestCase):
                                 self.client.do_disk_erase,
                                 'SSD', None)
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_has_disk_erase_completed(self, call_mock):
         self.client.has_disk_erase_completed()
         call_mock.assert_called_once_with('has_disk_erase_completed')
@@ -878,7 +978,7 @@ class IloClientTestCase(testtools.TestCase):
                                 'on current platform.',
                                 self.client.has_disk_erase_completed)
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_create_raid_configuration(self, call_mock):
         ld1 = {"size_gb": 150, "raid_level": '0', "is_root_volume": True}
         raid_config = {"logical_disks": [ld1]}
@@ -910,7 +1010,7 @@ class IloClientTestCase(testtools.TestCase):
                                 self.client.create_raid_configuration,
                                 raid_config)
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_read_raid_configuration(self, call_mock):
         ld1 = {"size_gb": 150, "raid_level": '0', "is_root_volume": True}
         raid_config = {"logical_disks": [ld1]}
@@ -1046,7 +1146,7 @@ class IloClientTestCase(testtools.TestCase):
         self.client.get_persistent_boot_device()
         get_pers_boot_device_mock.assert_called_once_with()
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_update_firmware(self, _call_method_mock):
         # | GIVEN |
         some_url = 'some-url'
@@ -1135,7 +1235,7 @@ class IloClientTestCase(testtools.TestCase):
         self.client.set_bios_settings(d, apply_filter)
         bios_settings_mock.assert_called_once_with(d, False)
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     @mock.patch.object(snmp_cpqdisk_sizes, 'get_local_gb')
     def test_get_essential_prop_no_snmp_ris(self,
                                             snmp_mock,
@@ -1148,7 +1248,7 @@ class IloClientTestCase(testtools.TestCase):
         call_mock.assert_called_once_with('get_essential_properties')
         self.assertFalse(snmp_mock.called)
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     @mock.patch.object(snmp_cpqdisk_sizes, 'get_local_gb')
     def test_get_essential_prop_no_snmp_local_gb_0(self,
                                                    snmp_mock,
@@ -1161,7 +1261,7 @@ class IloClientTestCase(testtools.TestCase):
         call_mock.assert_called_once_with('get_essential_properties')
         self.assertFalse(snmp_mock.called)
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     @mock.patch.object(snmp_cpqdisk_sizes, 'get_local_gb')
     def test_get_essential_prop_snmp_true(self,
                                           snmp_mock,
@@ -1183,7 +1283,7 @@ class IloClientTestCase(testtools.TestCase):
         snmp_mock.assert_called_once_with(
             self.client.ipmi_host_info['address'], snmp_credentials)
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     @mock.patch.object(snmp_cpqdisk_sizes, 'get_local_gb')
     def test_get_essential_prop_snmp_true_local_gb_0(self,
                                                      snmp_mock,
@@ -1206,7 +1306,7 @@ class IloClientTestCase(testtools.TestCase):
             self.client.ipmi_host_info['address'], snmp_credentials)
 
     @mock.patch.object(snmp_cpqdisk_sizes, 'get_local_gb')
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_essential_prop_snmp_false_local_gb_0(self, call_mock,
                                                       snmp_mock):
 
@@ -1226,7 +1326,7 @@ class IloClientTestCase(testtools.TestCase):
         call_mock.assert_called_once_with('get_essential_properties')
         self.assertFalse(snmp_mock.called)
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_inject_nmi(self, call_mock):
         self.client.inject_nmi()
         call_mock.assert_called_once_with('inject_nmi')
@@ -1244,7 +1344,7 @@ class IloClientTestCase(testtools.TestCase):
                                 'not supported',
                                 self.client.inject_nmi)
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_host_post_state(self, call_mock):
         self.client.get_host_post_state()
         call_mock.assert_called_once_with('get_host_post_state')
@@ -1261,7 +1361,7 @@ class IloClientTestCase(testtools.TestCase):
         self.client.get_host_post_state()
         get_host_post_state_mock.assert_called_once_with()
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_bios_settings_result(self, call_mock):
         self.client.get_bios_settings_result()
         call_mock.assert_called_once_with('get_bios_settings_result')
@@ -1279,7 +1379,7 @@ class IloClientTestCase(testtools.TestCase):
                                 'not supported',
                                 self.client.get_bios_settings_result)
 
-    @mock.patch.object(client.IloClient, '_call_method')
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_available_disk_types(self, call_mock):
         self.client.get_available_disk_types()
         call_mock.assert_called_once_with('get_available_disk_types')
@@ -1310,7 +1410,7 @@ class IloRedfishClientTestCase(testtools.TestCase):
         super(IloRedfishClientTestCase, self).setUp()
         self.redfish_mock = redfish_mock
         product_mock.return_value = 'Gen10'
-        self.client = client.IloClient("1.2.3.4", "Admin", "admin")
+        self.client = client.IloClient.cls("1.2.3.4", "Admin", "admin")
 
     def test_calling_redfish_operations_gen10(self):
         self.client.model = 'Gen10'

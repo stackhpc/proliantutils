@@ -164,6 +164,13 @@ class RedfishOperations(operations.IloOperations):
             LOG.debug(msg)
             raise exception.IloConnectionError(msg)
 
+    def __del__(self):
+        try:
+            if self._sushy:
+                self._sushy.close()
+        except AttributeError:
+            pass
+
     def _get_sushy_system(self, system_id):
         """Get the sushy system for system_id
 
