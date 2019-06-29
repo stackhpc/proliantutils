@@ -13,6 +13,7 @@
 # under the License.
 """IloClient module"""
 
+import collections
 from proliantutils import exception
 from proliantutils.ilo import ipmi
 from proliantutils.ilo import operations
@@ -114,6 +115,60 @@ SUPPORTED_REDFISH_METHODS = [
 LOG = log.get_logger(__name__)
 
 
+def cache_node(cache=True):
+
+    def wrapper(cls):
+
+        if not cache:
+            return cls
+        else:
+            class IloClientWrapper(object):
+
+                MAX_CACHE_SIZE = 1024
+
+                def __init__(self, cls):
+                    self.cls = cls
+                    self._instances = collections.OrderedDict()
+
+                def _if_not_exists(self, address):
+                    return (address not in self._instances)
+
+                def _create_instance(self, *args, **kwargs):
+                    address = args[0]
+                    self._instances[address] = self.cls(*args, **kwargs)
+                    # Check for max_cache_size
+                    if len(self._instances) > self.MAX_CACHE_SIZE:
+                        LOG.debug("Node cache hit the maximum size of %d." % (
+                            self.MAX_CACHE_SIZE))
+                        self._pop_oldest_node()
+
+                def __call__(self, *args, **kwargs):
+                    if not args:
+                        LOG.error("Error creating iLO object.")
+                    address = args[0]
+
+                    if self._if_not_exists(address):
+                        LOG.debug("Creating iLO object for node %(address)s.",
+                                  {'address': address})
+                        self._create_instance(*args, **kwargs)
+                    else:
+                        LOG.debug("Using existing object for node "
+                                  "%(address)s.", {'address': address})
+                    return self._instances[address]
+
+                def _pop_oldest_node(self):
+                    node_keys = list(self._instances)
+                    node_key = next(iter(node_keys))
+                    LOG.debug("Removed oldest node %s from cache" % (node_key))
+                    rnode = self._instances.pop(node_key, None)
+                    if rnode:
+                        del rnode
+
+            return IloClientWrapper(cls)
+    return wrapper
+
+
+@cache_node()
 class IloClient(operations.IloOperations):
 
     def __init__(self, host, login, password, timeout=60, port=443,
@@ -162,6 +217,13 @@ class IloClient(operations.IloOperations):
         self._validate_snmp()
         LOG.debug(self._("IloClient object created. "
                          "Model: %(model)s"), {'model': self.model})
+
+    def __del__(self):
+        try:
+            if self.redfish:
+                del self.redfish
+        except AttributeError:
+            pass
 
     def _init_redfish_object(self, is_ribcl_enabled, redfish_controller_ip,
                              username, password, bios_password=None,
