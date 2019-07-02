@@ -89,8 +89,8 @@ class SecureBoot(base.ResourceBase):
         reset_keys_action = self._get_reset_keys_action_element()
 
         if not reset_keys_action.allowed_values:
-            LOG.warning('Could not figure out the allowed values for the '
-                        'reset keys in secure boot %s', self.path)
+            LOG.debug('Could not figure out the allowed values for the '
+                      'reset keys in secure boot %s', self.path)
             return set(mappings.SECUREBOOT_RESET_KEYS_MAP_REV)
 
         return set([mappings.SECUREBOOT_RESET_KEYS_MAP[v] for v in

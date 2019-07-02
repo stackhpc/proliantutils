@@ -81,9 +81,7 @@ class SecureBootTestCase(testtools.TestCase):
         self.assertEqual(expected, values)
         self.assertIsInstance(values, set)
 
-    @mock.patch.object(secure_boot.LOG, 'warning', autospec=True)
-    def test_get_allowed_reset_keys_values_no_values_specified(
-            self, mock_log):
+    def test_get_allowed_reset_keys_values_no_values_specified(self):
         self.secure_boot_inst._actions.reset_keys.allowed_values = None
         values = self.secure_boot_inst.get_allowed_reset_keys_values()
         # Assert it returns all values if it can't get the specific ones
@@ -92,7 +90,6 @@ class SecureBootTestCase(testtools.TestCase):
                         sys_cons.SECUREBOOT_RESET_KEYS_DELETE_PK])
         self.assertEqual(expected, values)
         self.assertIsInstance(values, set)
-        self.assertEqual(1, mock_log.call_count)
 
     def test_reset_keys(self):
         self.secure_boot_inst.reset_keys(
