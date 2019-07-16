@@ -23,7 +23,6 @@ from oslo_serialization import base64
 import testtools
 
 from proliantutils import exception
-from proliantutils.ilo import client as ilo_client
 from proliantutils.sum import sum_controller
 from proliantutils.tests.sum import sum_sample_output as constants
 from proliantutils import utils
@@ -162,14 +161,10 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
     @mock.patch.object(os.path, 'exists')
     @mock.patch.object(os, 'mkdir')
     @mock.patch.object(processutils, 'execute')
-    @mock.patch.object(ilo_client, 'IloClient', spec_set=True, autospec=True)
-    def test_update_firmware(self, client_mock, execute_mock, mkdir_mock,
+    def test_update_firmware(self, execute_mock, mkdir_mock,
                              exists_mock, mkdtemp_mock, rmtree_mock,
                              listdir_mock, execute_sum_mock,
                              verify_image_mock, validate_mock):
-        ilo_mock_object = client_mock.return_value
-        eject_media_mock = ilo_mock_object.eject_virtual_media
-        insert_media_mock = ilo_mock_object.insert_virtual_media
         execute_sum_mock.return_value = 'SUCCESS'
         listdir_mock.return_value = ['SPP_LABEL']
         mkdtemp_mock.return_value = "/tempdir"
@@ -179,9 +174,6 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
 
         ret_val = sum_controller.update_firmware(self.node)
 
-        eject_media_mock.assert_called_once_with('CDROM')
-        insert_media_mock.assert_called_once_with('http://1.2.3.4/SPP.iso',
-                                                  'CDROM')
         execute_mock.assert_any_call('mount', "/dev/disk/by-label/SPP_LABEL",
                                      "/tempdir")
         execute_sum_mock.assert_any_call('/tempdir/hp/swpackages/hpsum',
@@ -204,14 +196,10 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
     @mock.patch.object(os.path, 'exists')
     @mock.patch.object(os, 'mkdir')
     @mock.patch.object(processutils, 'execute')
-    @mock.patch.object(ilo_client, 'IloClient', spec_set=True, autospec=True)
-    def test_update_firmware_sum(self, client_mock, execute_mock, mkdir_mock,
+    def test_update_firmware_sum(self, execute_mock, mkdir_mock,
                                  exists_mock, mkdtemp_mock, rmtree_mock,
                                  listdir_mock, execute_sum_mock,
                                  verify_image_mock, validate_mock):
-        ilo_mock_object = client_mock.return_value
-        eject_media_mock = ilo_mock_object.eject_virtual_media
-        insert_media_mock = ilo_mock_object.insert_virtual_media
         execute_sum_mock.return_value = 'SUCCESS'
         listdir_mock.return_value = ['SPP_LABEL']
         mkdtemp_mock.return_value = "/tempdir"
@@ -221,9 +209,6 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
 
         ret_val = sum_controller.update_firmware(self.node)
 
-        eject_media_mock.assert_called_once_with('CDROM')
-        insert_media_mock.assert_called_once_with('http://1.2.3.4/SPP.iso',
-                                                  'CDROM')
         execute_mock.assert_any_call('mount', "/dev/disk/by-label/SPP_LABEL",
                                      "/tempdir")
         execute_sum_mock.assert_any_call('/tempdir/packages/smartupdate',
@@ -251,30 +236,11 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
         self.assertIn(value, str(exc))
 
     @mock.patch.object(utils, 'validate_href')
-    @mock.patch.object(ilo_client, 'IloClient', spec_set=True, autospec=True)
-    def test_update_firmware_vmedia_attach_fails(self, client_mock,
-                                                 validate_mock):
-        ilo_mock_object = client_mock.return_value
-        eject_media_mock = ilo_mock_object.eject_virtual_media
-        value = ("Unable to attach SUM SPP iso http://1.2.3.4/SPP.iso "
-                 "to the iLO")
-        eject_media_mock.side_effect = exception.IloError(value)
-
-        exc = self.assertRaises(exception.IloError,
-                                sum_controller.update_firmware, self.node)
-        self.assertEqual(value, str(exc))
-
-    @mock.patch.object(utils, 'validate_href')
     @mock.patch.object(os.path, 'exists')
     @mock.patch.object(os, 'listdir')
-    @mock.patch.object(ilo_client, 'IloClient', spec_set=True, autospec=True)
-    def test_update_firmware_device_file_not_found(self, client_mock,
+    def test_update_firmware_device_file_not_found(self,
                                                    listdir_mock, exists_mock,
                                                    validate_mock):
-        ilo_mock_object = client_mock.return_value
-        eject_media_mock = ilo_mock_object.eject_virtual_media
-        insert_media_mock = ilo_mock_object.insert_virtual_media
-
         listdir_mock.return_value = ['SPP_LABEL']
         exists_mock.return_value = False
 
@@ -284,22 +250,15 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
         exc = self.assertRaises(exception.SUMOperationError,
                                 sum_controller.update_firmware, self.node)
         self.assertEqual(msg, str(exc))
-        eject_media_mock.assert_called_once_with('CDROM')
-        insert_media_mock.assert_called_once_with('http://1.2.3.4/SPP.iso',
-                                                  'CDROM')
         exists_mock.assert_called_once_with("/dev/disk/by-label/SPP_LABEL")
 
     @mock.patch.object(utils, 'validate_href')
     @mock.patch.object(utils, 'verify_image_checksum')
     @mock.patch.object(os, 'listdir')
     @mock.patch.object(os.path, 'exists')
-    @mock.patch.object(ilo_client, 'IloClient', spec_set=True, autospec=True)
-    def test_update_firmware_invalid_checksum(self, client_mock, exists_mock,
+    def test_update_firmware_invalid_checksum(self, exists_mock,
                                               listdir_mock, verify_image_mock,
                                               validate_mock):
-        ilo_mock_object = client_mock.return_value
-        eject_media_mock = ilo_mock_object.eject_virtual_media
-        insert_media_mock = ilo_mock_object.insert_virtual_media
         listdir_mock.return_value = ['SPP_LABEL']
         exists_mock.side_effect = [True, False]
 
@@ -315,9 +274,6 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
 
         verify_image_mock.assert_called_once_with(
             '/dev/disk/by-label/SPP_LABEL', '1234567890')
-        eject_media_mock.assert_called_once_with('CDROM')
-        insert_media_mock.assert_called_once_with('http://1.2.3.4/SPP.iso',
-                                                  'CDROM')
         exists_mock.assert_called_once_with("/dev/disk/by-label/SPP_LABEL")
 
     @mock.patch.object(utils, 'validate_href')
@@ -327,14 +283,10 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
     @mock.patch.object(os, 'mkdir')
     @mock.patch.object(os.path, 'exists')
     @mock.patch.object(os, 'listdir')
-    @mock.patch.object(ilo_client, 'IloClient', spec_set=True, autospec=True)
-    def test_update_firmware_mount_fails(self, client_mock, listdir_mock,
+    def test_update_firmware_mount_fails(self, listdir_mock,
                                          exists_mock, mkdir_mock,
                                          mkdtemp_mock, execute_mock,
                                          verify_image_mock, validate_mock):
-        ilo_mock_object = client_mock.return_value
-        eject_media_mock = ilo_mock_object.eject_virtual_media
-        insert_media_mock = ilo_mock_object.insert_virtual_media
         listdir_mock.return_value = ['SPP_LABEL']
         exists_mock.return_value = True
         mkdtemp_mock.return_value = "/tempdir"
@@ -345,9 +297,6 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
         exc = self.assertRaises(exception.SUMOperationError,
                                 sum_controller.update_firmware, self.node)
         self.assertIn(msg, str(exc))
-        eject_media_mock.assert_called_once_with('CDROM')
-        insert_media_mock.assert_called_once_with('http://1.2.3.4/SPP.iso',
-                                                  'CDROM')
         exists_mock.assert_called_once_with("/dev/disk/by-label/SPP_LABEL")
 
     @mock.patch.object(sum_controller,

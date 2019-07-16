@@ -26,7 +26,6 @@ from oslo_concurrency import processutils
 from oslo_serialization import base64
 
 from proliantutils import exception
-from proliantutils.ilo import client
 from proliantutils import utils
 
 
@@ -177,16 +176,6 @@ def update_firmware(node):
         utils.validate_href(sum_update_iso)
     except exception.ImageRefValidationFailed as e:
         raise exception.SUMOperationError(reason=e)
-
-    # Ejects the CDROM device in the iLO and inserts the SUM update ISO
-    # to the CDROM device.
-    info = node.get('driver_info')
-    ilo_object = client.IloClient(info.get('ilo_address'),
-                                  info.get('ilo_username'),
-                                  info.get('ilo_password'))
-
-    ilo_object.eject_virtual_media('CDROM')
-    ilo_object.insert_virtual_media(sum_update_iso, 'CDROM')
 
     # Waits for the OS to detect the disk and update the label file. SPP ISO
     # is identified by matching its label.
