@@ -160,7 +160,27 @@ class IloRisTestCase(testtools.TestCase):
             'iqn.2011-07.com.example.server:test1',
             '1', '10.10.1.30')
         _uefi_boot_mode_mock.assert_called_once_with()
-        change_iscsi_settings_mock.assert_called_once_with(iscsi_variables)
+        change_iscsi_settings_mock.assert_called_once_with(
+            iscsi_variables, [])
+
+    @mock.patch.object(ris.RISOperations, '_change_iscsi_settings')
+    @mock.patch.object(ris.RISOperations, '_is_boot_mode_uefi')
+    def test_set_iscsi_info_uefi_with_mac(self, _uefi_boot_mode_mock,
+                                          change_iscsi_settings_mock):
+        _uefi_boot_mode_mock.return_value = True
+        iscsi_variables = {
+            'iSCSITargetName': 'iqn.2011-07.com.example.server:test1',
+            'iSCSITargetInfoViaDHCP': False,
+            'iSCSIBootLUN': '1',
+            'iSCSIBootEnable': 'Enabled',
+            'iSCSITargetIpAddress': '10.10.1.30',
+            'iSCSITargetTcpPort': 3260}
+        self.client.set_iscsi_info(
+            'iqn.2011-07.com.example.server:test1',
+            '1', '10.10.1.30', macs=['98:f2:b3:ee:f4:00'])
+        _uefi_boot_mode_mock.assert_called_once_with()
+        change_iscsi_settings_mock.assert_called_once_with(
+            iscsi_variables, ['98:f2:b3:ee:f4:00'])
 
     @mock.patch.object(ris.RISOperations, '_change_iscsi_settings')
     @mock.patch.object(ris.RISOperations, '_is_boot_mode_uefi')
@@ -170,7 +190,19 @@ class IloRisTestCase(testtools.TestCase):
         iscsi_variables = {'iSCSIBootEnable': 'Disabled'}
         self.client.unset_iscsi_info()
         _uefi_boot_mode_mock.assert_called_once_with()
-        change_iscsi_settings_mock.assert_called_once_with(iscsi_variables)
+        change_iscsi_settings_mock.assert_called_once_with(
+            iscsi_variables, [])
+
+    @mock.patch.object(ris.RISOperations, '_change_iscsi_settings')
+    @mock.patch.object(ris.RISOperations, '_is_boot_mode_uefi')
+    def test_unset_iscsi_info_uefi_with_mac(self, _uefi_boot_mode_mock,
+                                            change_iscsi_settings_mock):
+        _uefi_boot_mode_mock.return_value = True
+        iscsi_variables = {'iSCSIBootEnable': 'Disabled'}
+        self.client.unset_iscsi_info(['98:f2:b3:ee:f4:00'])
+        _uefi_boot_mode_mock.assert_called_once_with()
+        change_iscsi_settings_mock.assert_called_once_with(
+            iscsi_variables, ['98:f2:b3:ee:f4:00'])
 
     @mock.patch.object(ris.RISOperations, '_is_boot_mode_uefi')
     def test_unset_iscsi_info_bios(self, _uefi_boot_mode_mock):
@@ -1736,6 +1768,57 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
                           self.client._check_iscsi_rest_patch_allowed)
         check_bios_mock.assert_called_once_with()
 
+    @mock.patch.object(ris.RISOperations, '_get_uefi_device_path_by_mac')
+    @mock.patch.object(ris.RISOperations, '_get_bios_mappings_resource')
+    @mock.patch.object(ris.RISOperations, '_check_bios_resource')
+    def test__get_nic_association_name_by_mac(
+            self, check_bios_mock, mappings_mock, uefi_device_path_mock):
+        bios_uri = '/rest/v1/systems/1/bios'
+        bios_settings = json.loads(ris_outputs.GET_BIOS_SETTINGS)
+        check_bios_mock.return_value = (
+            ris_outputs.GET_HEADERS, bios_uri, bios_settings)
+        map_settings = json.loads(ris_outputs.GET_BIOS_MAPPINGS)
+        mappings_mock.return_value = map_settings
+        (uefi_device_path_mock.
+         return_value) = 'PciRoot(0x0)/Pci(0x1C,0x4)/Pci(0x0,0x0)'
+        result = (
+            self.client._get_nic_association_name_by_mac('98:f2:b3:ee:f4:00'))
+        self.assertEqual(result, 'NicBoot1')
+
+    @mock.patch.object(ris.RISOperations, '_get_collection')
+    def test__get_all_macs(self, collection_mock):
+        member_uri = '/rest/v1/Systems/1/NetworkAdapters'
+        collection_item = json.loads(ris_outputs.RESP_NETWORK_ADAPTER)
+        collection_mock.return_value = [(200, None, collection_item,
+                                         member_uri)]
+        result = self.client._get_all_macs()
+        self.assertEqual(result, ['9c:b6:54:79:78:70'])
+
+    @mock.patch.object(ris.RISOperations, '_get_all_macs')
+    def test__validate_macs(self, get_all_macs_mock):
+        get_all_macs_mock.return_value = [
+            '12:44:6a:3b:04:11', '13:44:6a:3b:04:13']
+        result = self.client._validate_macs(['12:44:6a:3b:04:11'])
+        self.assertEqual(result, None)
+
+    @mock.patch.object(ris.RISOperations, '_get_all_macs')
+    def test_validate_macs_failed(self, get_all_macs_mock):
+        get_all_macs_mock.return_value = [
+            '12:44:6a:3b:04:11', '13:44:6a:3b:04:13']
+        self.assertRaisesRegex(
+            exception.InvalidInputError,
+            "Given macs: \['12:44:6A:3B:04:15'\] not found in the system",
+            self.client._validate_macs, ['12:44:6A:3B:04:15'])
+
+    @mock.patch.object(ris.RISOperations, '_get_collection')
+    def test__get_uefi_device_path_by_mac(self, collection_mock):
+        member_uri = '/rest/v1/Systems/1/NetworkAdapters'
+        collection_item = json.loads(ris_outputs.RESP_NETWORK_ADAPTER)
+        collection_mock.return_value = [(200, None, collection_item,
+                                         member_uri)]
+        result = self.client._get_uefi_device_path_by_mac('9c:b6:54:79:78:70')
+        self.assertEqual(result, 'PciRoot(0x0)/Pci(0x2,0x3)/Pci(0x0,0x0)')
+
     @mock.patch.object(ris.RISOperations, '_rest_patch')
     @mock.patch.object(ris.RISOperations, '_check_iscsi_rest_patch_allowed')
     @mock.patch.object(ris.RISOperations, '_get_bios_mappings_resource')
@@ -1759,25 +1842,66 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
         check_iscsi_mock.return_value = iscsi_uri
         patch_mock.return_value = (200, ris_outputs.GET_HEADERS,
                                    ris_outputs.REST_POST_RESPONSE)
-        self.client._change_iscsi_settings(properties)
+        self.client._change_iscsi_settings(properties, [])
         check_bios_mock.assert_called_once_with()
         mappings_mock.assert_called_once_with(bios_settings)
         check_iscsi_mock.assert_called_once_with()
         patch_mock.assert_called_once_with(iscsi_uri, None, settings)
 
+    @mock.patch.object(ris.RISOperations, '_validate_macs')
+    @mock.patch.object(ris.RISOperations, '_get_nic_association_name_by_mac')
+    @mock.patch.object(ris.RISOperations, '_rest_patch')
+    @mock.patch.object(ris.RISOperations, '_check_iscsi_rest_patch_allowed')
+    def test__change_iscsi_settings_with_mac(
+            self, check_iscsi_mock, patch_mock, nic_association_mock,
+            validate_mock):
+        nic_association_mock.return_value = 'NicBoot1'
+        iscsi_uri = '/rest/v1/systems/1/bios/iScsi/Settings'
+        properties = {'iSCSITargetName':
+                      'iqn.2011-07.com.example.server:test1',
+                      'iSCSIBootLUN': '1',
+                      'iSCSITargetIpAddress': '10.10.1.30',
+                      'iSCSITargetTcpPort': 3260}
+        settings = json.loads(ris_outputs.GET_ISCSI_PATCH)
+        check_iscsi_mock.return_value = iscsi_uri
+        patch_mock.return_value = (200, ris_outputs.GET_HEADERS,
+                                   ris_outputs.REST_POST_RESPONSE)
+        self.client._change_iscsi_settings(properties, ['98:f2:b3:ee:f4:00'])
+        patch_mock.assert_called_once_with(
+            iscsi_uri, None,
+            {'iSCSIBootSources': [settings['iSCSIBootSources'][0]]})
+        validate_mock.assert_called_once_with(['98:f2:b3:ee:f4:00'])
+
+    @mock.patch.object(ris.RISOperations, '_validate_macs')
+    @mock.patch.object(ris.RISOperations, '_check_iscsi_rest_patch_allowed')
+    def test__change_iscsi_settings_invalid_mac(
+            self, check_iscsi_mock, validate_macs_mock):
+        iscsi_uri = '/rest/v1/systems/1/bios/iScsi/Settings'
+        check_iscsi_mock.return_value = iscsi_uri
+        msg = ("Given macs: %(macs)s not found in the system"
+               % {'macs': str(['12:44:6A:3B:04:15'])})
+        validate_macs_mock.side_effect = exception.InvalidInputError(msg)
+        self.assertRaisesRegex(
+            exception.InvalidInputError,
+            "Given macs: \['12:44:6A:3B:04:15'\] not found in the system",
+            self.client._change_iscsi_settings, {}, ['12:44:6A:3B:04:15'])
+
+    @mock.patch.object(ris.RISOperations, '_check_iscsi_rest_patch_allowed')
     @mock.patch.object(ris.RISOperations, '_get_bios_mappings_resource')
     @mock.patch.object(ris.RISOperations, '_check_bios_resource')
-    def test__change_iscsi_settings_without_nic(self, check_bios_mock,
-                                                mappings_mock):
+    def test__change_iscsi_settings_no_macs(
+            self, check_bios_mock, mappings_mock, check_iscsi_mock):
         bios_uri = '/rest/v1/systems/1/bios'
+        iscsi_uri = '/rest/v1/systems/1/bios/iScsi/Settings'
         bios_settings = json.loads(ris_outputs.GET_BIOS_SETTINGS)
         check_bios_mock.return_value = (ris_outputs.GET_HEADERS,
                                         bios_uri, bios_settings)
         map_settings = json.loads(ris_outputs.GET_BIOS_MAPPINGS_WITHOUT_NIC)
         mappings_mock.return_value = map_settings
+        check_iscsi_mock.return_value = iscsi_uri
         self.assertRaises(exception.IloError,
-                          self.client._change_iscsi_settings,
-                          {})
+                          self.client._change_iscsi_settings, {},
+                          [])
         check_bios_mock.assert_called_once_with()
         mappings_mock.assert_called_once_with(bios_settings)
 
@@ -1806,7 +1930,7 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
                                    ris_outputs.REST_POST_RESPONSE)
         self.assertRaises(exception.IloError,
                           self.client._change_iscsi_settings,
-                          properties)
+                          properties, [])
         check_bios_mock.assert_called_once_with()
         mappings_mock.assert_called_once_with(bios_settings)
         check_iscsi_mock.assert_called_once_with()

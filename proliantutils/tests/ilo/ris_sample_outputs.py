@@ -1270,6 +1270,71 @@ GET_MANAGER_DETAILS_NO_FIRMWARE = """
     }
 """
 
+RESP_NETWORK_ADAPTER = """
+{
+    "@odata.context": "/redfish/v1/$metadata#Systems/Members/1/\
+                       NetworkAdapters/Members/$entity",
+    "@odata.id": "/redfish/v1/Systems/1/NetworkAdapters/1/",
+    "@odata.type": "#BaseNetworkAdapter.1.1.0.BaseNetworkAdapter",
+    "Firmware": {
+        "Current": {
+            "VersionString": null
+        }
+    },
+    "Id": "1",
+    "Name": "HPE Ethernet 1Gb 2-port 361i Adapter - NIC",
+    "PartNumber": null,
+    "PhysicalPorts": [
+        {
+            "FullDuplex": false,
+            "IPv4Addresses": [
+                {
+                    "Address": null
+                }
+            ],
+            "IPv6Addresses": [
+                {
+                    "Address": null
+                }
+            ],
+            "MacAddress": "9C:B6:54:79:78:70",
+            "Name": null,
+            "Oem": {
+                "Hp": {
+                    "@odata.type": "#HpBaseNetworkAdapterExt.1.0.0.\
+                                    HpBaseNetworkAdapterExt",
+                    "BadReceives": null,
+                    "BadTransmits": null,
+                    "GoodReceives": null,
+                    "GoodTransmits": null,
+                    "StructuredName": "NIC.LOM.1.1",
+                    "Team": null,
+                    "Type": "HpBaseNetworkAdapterExt.1.0.0"
+                }
+            },
+            "SpeedMbps": 0,
+            "Status": {
+                "Health": "OK",
+                "State": "Enabled"
+            },
+            "UEFIDevicePath": "PciRoot(0x0)/Pci(0x2,0x3)/Pci(0x0,0x0)"
+        }
+    ],
+    "SerialNumber": null,
+    "Status": {
+        "Health": "OK",
+        "State": "Enabled"
+    },
+    "StructuredName": "NIC.LOM.1.1",
+    "Type": "BaseNetworkAdapter.1.1.0",
+    "UEFIDevicePath": "PciRoot(0x0)/Pci(0x2,0x3)/Pci(0x0,0x0)",
+    "links": {
+        "self": {
+            "href": "/rest/v1/Systems/1/NetworkAdapters/1"
+        }
+    }
+}
+"""
 
 GET_BIOS_SETTINGS = """
     {
@@ -2536,7 +2601,7 @@ GET_ISCSI_PATCH = """
             "iSCSITargetName": "iqn.2011-07.com.example.server:test1",
             "iSCSITargetTcpPort": 3260
          }
-     ]
+    ]
 }
 """
 

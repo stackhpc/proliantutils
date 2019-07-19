@@ -309,7 +309,7 @@ class HPESystemTestCase(testtools.TestCase):
             eth_coll = json.loads(f.read())
         with open('proliantutils/tests/redfish/json_samples/'
                   'ethernet_interface.json', 'r') as f:
-            eth_value = (json.loads(f.read()))
+            eth_value = (json.loads(f.read())['default'])
         self.conn.get.return_value.json.side_effect = [eth_coll,
                                                        eth_value]
         actual_macs = self.sys_inst.ethernet_interfaces.summary
@@ -339,7 +339,7 @@ class HPESystemTestCase(testtools.TestCase):
             eth_coll = json.loads(f.read())
         with open('proliantutils/tests/redfish/json_samples/'
                   'ethernet_interface.json', 'r') as f:
-            eth_value = (json.loads(f.read()))
+            eth_value = (json.loads(f.read())['default'])
         self.conn.get.return_value.json.side_effect = [eth_coll,
                                                        eth_value]
         actual_macs = self.sys_inst.ethernet_interfaces.summary
@@ -1127,3 +1127,53 @@ class HPESystemTestCase(testtools.TestCase):
         self.assertEqual(list(set(types)), self.sys_inst.get_disk_types())
         array_controller_by_model_mock.assert_called_once_with(
             'HPE Smart Array P408i-p SR Gen10')
+
+    @mock.patch.object(ethernet_interface.EthernetInterfaceCollection,
+                       'get_uefi_device_path_by_mac')
+    def test_get_nic_association_name_by_mac(self, uefi_device_path_mock):
+        with open('proliantutils/tests/redfish/'
+                  'json_samples/bios.json', 'r') as f:
+            bios_json = json.loads(f.read())
+        with open('proliantutils/tests/redfish/'
+                  'json_samples/bios_mappings.json', 'r') as f:
+            bios_mappings_json = json.loads(f.read())
+        path = ('proliantutils/tests/redfish/json_samples/'
+                'ethernet_interface_collection.json')
+        with open(path, 'r') as f:
+            eth_coll = json.loads(f.read())
+        self.conn.get.return_value.json.side_effect = [
+            bios_json['Default'], bios_mappings_json['Default'],
+            eth_coll]
+        (uefi_device_path_mock.
+         return_value) = 'PciRoot(0x2)/Pci(0x0,0x0)/Pci(0x0,0x2)'
+        result = self.sys_inst.get_nic_association_name_by_mac(
+            '12:44:6A:3B:04:11')
+        self.assertEqual(result, 'NicBoot1')
+
+    @mock.patch.object(ethernet_interface.EthernetInterfaceCollection,
+                       'get_all_macs')
+    def test_validate_macs(self, get_all_macs_mock):
+        path = ('proliantutils/tests/redfish/json_samples/'
+                'ethernet_interface_collection.json')
+        with open(path, 'r') as f:
+            eth_coll = json.loads(f.read())
+        self.conn.get.return_value.json.side_effect = [eth_coll]
+        get_all_macs_mock.return_value = [
+            '12:44:6a:3b:04:11', '13:44:6a:3b:04:13']
+        result = self.sys_inst.validate_macs(['12:44:6a:3b:04:11'])
+        self.assertEqual(result, None)
+
+    @mock.patch.object(ethernet_interface.EthernetInterfaceCollection,
+                       'get_all_macs')
+    def test_validate_macs_failed(self, get_all_macs_mock):
+        path = ('proliantutils/tests/redfish/json_samples/'
+                'ethernet_interface_collection.json')
+        with open(path, 'r') as f:
+            eth_coll = json.loads(f.read())
+        self.conn.get.return_value.json.side_effect = eth_coll
+        get_all_macs_mock.return_value = [
+            '12:44:6a:3b:04:11', '13:44:6a:3b:04:13']
+        self.assertRaisesRegex(
+            exception.InvalidInputError,
+            "Given macs: \['12:44:6A:3B:04:15'\] not found in the system",
+            self.sys_inst.validate_macs, ['12:44:6A:3B:04:15'])

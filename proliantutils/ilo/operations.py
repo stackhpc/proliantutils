@@ -66,7 +66,7 @@ class IloOperations(object):
 
     def set_iscsi_info(self, target_name, lun, ip_address,
                        port='3260', auth_method=None, username=None,
-                       password=None):
+                       password=None, macs=[]):
         """Set iscsi details of the system in uefi boot mode.
 
         The initiator system is set with the target details like
@@ -78,15 +78,17 @@ class IloOperations(object):
         :param auth_method : either None or CHAP.
         :param username: CHAP Username for authentication.
         :param password: CHAP secret.
+        :param mac: List of target macs for iSCSI.
         :raises: IloError, on an error from iLO.
         :raises: IloCommandNotSupportedInBiosError, if the system is
                  in the bios boot mode.
         """
         raise exception.IloCommandNotSupportedError(ERRMSG)
 
-    def unset_iscsi_info(self):
+    def unset_iscsi_info(self, macs=[]):
         """Disable iscsi boot option of the system in uefi boot mode.
 
+        :param mac: List of target macs for iSCSI.
         :raises: IloError, on an error from iLO.
         :raises: IloCommandNotSupportedError, if the system is
                  in the bios boot mode.

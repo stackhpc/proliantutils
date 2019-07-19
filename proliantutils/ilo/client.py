@@ -62,9 +62,7 @@ SUPPORTED_RIS_METHODS = [
     'set_one_time_boot',
     'set_pending_boot_mode',
     'set_secure_boot_mode',
-    'set_iscsi_boot_info',
     'set_iscsi_info',
-    'unset_iscsi_boot_info',
     'unset_iscsi_info',
     'get_iscsi_initiator_info',
     'set_iscsi_initiator_info',
@@ -114,9 +112,7 @@ SUPPORTED_REDFISH_METHODS = [
     'get_server_capabilities',
     'get_supported_boot_mode',
     'get_essential_properties',
-    'set_iscsi_boot_info',
     'set_iscsi_info',
-    'unset_iscsi_boot_info',
     'unset_iscsi_info',
     'get_iscsi_initiator_info',
     'set_iscsi_initiator_info'
@@ -372,7 +368,7 @@ class IloClient(operations.IloOperations):
 
     def set_iscsi_info(self, target_name, lun, ip_address,
                        port='3260', auth_method=None, username=None,
-                       password=None):
+                       password=None, macs=[]):
         """Set iscsi details of the system in uefi boot mode.
 
         The initiator system is set with the target details like
@@ -384,60 +380,24 @@ class IloClient(operations.IloOperations):
         :param auth_method : either None or CHAP.
         :param username: CHAP Username for authentication.
         :param password: CHAP secret.
+        :param mac: List of target mac for iSCSI.
         :raises: IloError, on an error from iLO.
         :raises: IloCommandNotSupportedInBiosError, if the system is
                  in the bios boot mode.
         """
         return self._call_method('set_iscsi_info', target_name, lun,
                                  ip_address, port, auth_method, username,
-                                 password)
+                                 password, macs)
 
-    def set_iscsi_boot_info(self, mac, target_name, lun, ip_address,
-                            port='3260', auth_method=None, username=None,
-                            password=None):
-        """Set iscsi details of the system in uefi boot mode.
-
-        The initiator system is set with the target details like
-        IQN, LUN, IP, Port etc.
-        :param mac: The MAC of the NIC to be set with iSCSI information
-        :param target_name: Target Name for iscsi.
-        :param lun: logical unit number.
-        :param ip_address: IP address of the target.
-        :param port: port of the target.
-        :param auth_method : either None or CHAP.
-        :param username: CHAP Username for authentication.
-        :param password: CHAP secret.
-        :raises: IloError, on an error from iLO.
-        :raises: IloCommandNotSupportedInBiosError, if the system is
-                 in the bios boot mode.
-        """
-        LOG.warning("'set_iscsi_boot_info' is deprecated. The 'MAC' parameter"
-                    "passed in is ignored. Use 'set_iscsi_info' instead.")
-        return self._call_method('set_iscsi_info', target_name, lun,
-                                 ip_address, port, auth_method, username,
-                                 password)
-
-    def unset_iscsi_info(self):
+    def unset_iscsi_info(self, macs=[]):
         """Disable iscsi boot option of the system in uefi boot mode.
 
+        :param mac: List of target mac for iSCSI.
         :raises: IloError, on an error from iLO.
         :raises: IloCommandNotSupportedInBiosError, if the system is
                  in the bios boot mode.
         """
-        return self._call_method('unset_iscsi_info')
-
-    def unset_iscsi_boot_info(self, mac):
-        """Disable iscsi boot option of the system in uefi boot mode.
-
-        :param mac: The MAC of the NIC to be set with iSCSI information.
-        :raises: IloError, on an error from iLO.
-        :raises: IloCommandNotSupportedInBiosError, if the system is
-                 in the bios boot mode.
-        """
-        LOG.warning("'unset_iscsi_boot_info' is deprecated. The 'MAC' "
-                    "parameter passed in is ignored. Use 'unset_iscsi_info' "
-                    "instead.")
-        return self._call_method('unset_iscsi_info')
+        return self._call_method('unset_iscsi_info', macs)
 
     def get_iscsi_initiator_info(self):
         """Returns iSCSI initiator information of iLO.

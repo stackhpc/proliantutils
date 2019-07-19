@@ -518,18 +518,7 @@ class IloClientTestCase(testtools.TestCase):
         call_mock.assert_called_once_with('set_iscsi_info',
                                           'iqn.2011-07.com:example:123',
                                           '1', '10.10.1.23', '3260',
-                                          'CHAP', 'user', 'password')
-
-    @mock.patch.object(client.IloClient.cls, '_call_method')
-    def test_set_iscsi_boot_info(self, call_mock):
-        self.client.set_iscsi_boot_info('aa:bb:cc:dd:ee:ff',
-                                        'iqn.2011-07.com:example:123',
-                                        '1', '10.10.1.23', '3260', 'CHAP',
-                                        'user', 'password')
-        call_mock.assert_called_once_with('set_iscsi_info',
-                                          'iqn.2011-07.com:example:123',
-                                          '1', '10.10.1.23', '3260',
-                                          'CHAP', 'user', 'password')
+                                          'CHAP', 'user', 'password', [])
 
     @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_iscsi_initiator_info(self, call_mock):
@@ -539,12 +528,7 @@ class IloClientTestCase(testtools.TestCase):
     @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_unset_iscsi_info(self, call_mock):
         self.client.unset_iscsi_info()
-        call_mock.assert_called_once_with('unset_iscsi_info')
-
-    @mock.patch.object(client.IloClient.cls, '_call_method')
-    def test_unset_iscsi_boot_info(self, call_mock):
-        self.client.unset_iscsi_boot_info("aa:bb:cc:dd:ee:ff")
-        call_mock.assert_called_once_with('unset_iscsi_info')
+        call_mock.assert_called_once_with('unset_iscsi_info', [])
 
     @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_set_iscsi_initiator_info(self, call_mock):

@@ -604,40 +604,104 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
                    ' does not exist')
             raise exception.IloCommandNotSupportedError(msg)
 
-    def _change_iscsi_settings(self, iscsi_info):
+    def _get_uefi_device_path_by_mac(self, mac):
+        """Return uefi device path of mac.
+
+        :returns: Uefi Device path.
+                  Ex. 'PciRoot(0x0)/Pci(0x2,0x3)/Pci(0x0,0x0)'
+        """
+        adapter_uri = '/rest/v1/Systems/1/NetworkAdapters'
+        for status, headers, member, memberuri in (
+                self._get_collection(adapter_uri)):
+            if status < 300 and member.get('PhysicalPorts'):
+                for port in member.get('PhysicalPorts'):
+                    if port['MacAddress'].lower() == mac.lower():
+                        return port['UEFIDevicePath']
+
+    def _get_nic_association_name_by_mac(self, mac):
+        """Return nic association name by mac address
+
+        :returns: Nic association name. Ex. NicBoot1
+        """
+        headers, bios_uri, bios_settings = self._check_bios_resource()
+        mappings = (
+            self._get_bios_mappings_resource(
+                bios_settings).get('BiosPciSettingsMappings'))
+        correlatable_id = self._get_uefi_device_path_by_mac(mac)
+        for mapping in mappings:
+            for subinstance in mapping['Subinstances']:
+                for association in subinstance['Associations']:
+                    if subinstance.get('CorrelatableID') == correlatable_id:
+                        return [name for name in subinstance[
+                            'Associations'] if 'NicBoot' in name][0]
+
+    def _get_all_macs(self):
+        """Return list of macs available on system
+
+        :returns: List of macs
+        """
+        macs = []
+        adapter_uri = '/rest/v1/Systems/1/NetworkAdapters'
+        for status, headers, member, memberuri in (
+                self._get_collection(adapter_uri)):
+            if status < 300 and member.get('PhysicalPorts'):
+                for port in member.get('PhysicalPorts'):
+                    macs.append(port['MacAddress'].lower())
+        return macs
+
+    def _validate_macs(self, macs):
+        """Validate given macs are there in system
+
+        :param macs: List of macs
+        :raises: InvalidInputError, if macs not valid
+        """
+        macs_available = self._get_all_macs()
+        if not set(macs).issubset(macs_available):
+            msg = ("Given macs: %(macs)s not found in the system"
+                   % {'macs': str(macs)})
+            raise exception.InvalidInputError(msg)
+
+    def _change_iscsi_settings(self, iscsi_info, macs=[]):
         """Change iSCSI settings.
 
+        :param macs: List of target macs for iSCSI.
         :param iscsi_info: A dictionary that contains information of iSCSI
                            target like target_name, lun, ip_address, port etc.
         :raises: IloError, on an error from iLO.
         """
-        headers, bios_uri, bios_settings = self._check_bios_resource()
-        # Get the Mappings resource.
-        map_settings = self._get_bios_mappings_resource(bios_settings)
-        nics = []
-        for mapping in map_settings['BiosPciSettingsMappings']:
-            for subinstance in mapping['Subinstances']:
-                for association in subinstance['Associations']:
-                    if 'NicBoot' in association:
-                        nics.append(association)
+        iscsi_uri = self._check_iscsi_rest_patch_allowed()
+        association_names = []
+        if macs:
+            self._validate_macs(macs)
+            association_names = [
+                self._get_nic_association_name_by_mac(mac) for mac in macs]
+        else:
+            # Get the Mappings resource.
+            headers, bios_uri, bios_settings = self._check_bios_resource()
+            map_settings = self._get_bios_mappings_resource(bios_settings)
+            for mapping in map_settings['BiosPciSettingsMappings']:
+                for subinstance in mapping['Subinstances']:
+                    for association in subinstance['Associations']:
+                        if 'NicBoot' in association:
+                            association_names.append(association)
 
-        if not nics:
-            msg = ('No nics found')
+        if not association_names:
+            msg = ('No macs were found on the system')
             raise exception.IloError(msg)
 
-        iscsi_uri = self._check_iscsi_rest_patch_allowed()
-        # Set iSCSI info to all nics
         iscsi_infos = []
-        for nic in nics:
+        for association_name in association_names:
             data = iscsi_info.copy()
-            data['iSCSIBootAttemptName'] = nic
-            data['iSCSINicSource'] = nic
-            data['iSCSIBootAttemptInstance'] = nics.index(nic) + 1
+            data['iSCSIBootAttemptName'] = association_name
+            data['iSCSINicSource'] = association_name
+            data['iSCSIBootAttemptInstance'] = (
+                association_names.index(association_name) + 1)
             iscsi_infos.append(data)
 
-        patch_data = {'iSCSIBootSources': iscsi_infos}
+        iscsi_data = {'iSCSIBootSources': iscsi_infos}
+
         status, headers, response = self._rest_patch(iscsi_uri,
-                                                     None, patch_data)
+                                                     None, iscsi_data)
         if status >= 300:
             msg = self._get_extended_error(response)
             raise exception.IloError(msg)
@@ -914,7 +978,7 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
 
     def set_iscsi_info(self, target_name, lun, ip_address,
                        port='3260', auth_method=None, username=None,
-                       password=None):
+                       password=None, macs=[]):
         """Set iSCSI details of the system in UEFI boot mode.
 
         The initiator system is set with the target details like
@@ -926,6 +990,7 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         :param auth_method : either None or CHAP.
         :param username: CHAP Username for authentication.
         :param password: CHAP secret.
+        :param macs: List of target macs for iSCSI.
         :raises: IloError, on an error from iLO.
         :raises: IloCommandNotSupportedInBiosError, if the system is
                  in the BIOS boot mode.
@@ -942,21 +1007,22 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
                 iscsi_info['iSCSIAuthenticationMethod'] = 'Chap'
                 iscsi_info['iSCSIChapUsername'] = username
                 iscsi_info['iSCSIChapSecret'] = password
-            self._change_iscsi_settings(iscsi_info)
+            self._change_iscsi_settings(iscsi_info, macs)
         else:
             msg = 'iSCSI boot is not supported in the BIOS boot mode'
             raise exception.IloCommandNotSupportedInBiosError(msg)
 
-    def unset_iscsi_info(self):
+    def unset_iscsi_info(self, macs=[]):
         """Disable iSCSI boot option in UEFI boot mode.
 
+        :param macs: List of target macs for iSCSI.
         :raises: IloError, on an error from iLO.
         :raises: IloCommandNotSupportedInBiosError, if the system is
                  in the BIOS boot mode.
         """
         if(self._is_boot_mode_uefi() is True):
             iscsi_info = {'iSCSIBootEnable': 'Disabled'}
-            self._change_iscsi_settings(iscsi_info)
+            self._change_iscsi_settings(iscsi_info, macs)
         else:
             msg = 'iSCSI boot is not supported in the BIOS boot mode'
             raise exception.IloCommandNotSupportedInBiosError(msg)

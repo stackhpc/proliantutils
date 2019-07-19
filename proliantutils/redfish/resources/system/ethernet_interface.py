@@ -22,7 +22,9 @@ from sushy import utils as sushy_utils
 from proliantutils.redfish.resources.system import constants as sys_cons
 
 
-EthernetInterface = ethernet_interface.EthernetInterface
+class EthernetInterface(ethernet_interface.EthernetInterface):
+
+    uefi_device_path = base.Field('UefiDevicePath')
 
 
 class EthernetInterfaceCollection(base.ResourceCollectionBase):
@@ -54,3 +56,16 @@ class EthernetInterfaceCollection(base.ResourceCollectionBase):
                     mac_dict.update(
                         {'Port ' + eth.identity: eth.mac_address})
         return mac_dict
+
+    def get_uefi_device_path_by_mac(self, mac):
+        """Return uefi device path of mac"""
+        for nic in self.get_members():
+            if nic.mac_address.lower() == mac.lower():
+                return nic.uefi_device_path
+
+    def get_all_macs(self):
+        """Return list of macs available on system"""
+        macs = []
+        for mac in self.get_members():
+            macs.append(mac.mac_address.lower())
+        return macs

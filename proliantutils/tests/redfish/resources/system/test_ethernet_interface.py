@@ -30,7 +30,8 @@ class EthernetInterfaceTestCase(testtools.TestCase):
         eth_file = ('proliantutils/tests/redfish/json_samples/'
                     'ethernet_interface.json')
         with open(eth_file, 'r') as f:
-            self.conn.get.return_value.json.return_value = json.loads(f.read())
+            self.conn.get.return_value.json.return_value = json.loads(
+                f.read())['default']
 
         eth_path = ("/redfish/v1/Systems/437XR1138R2/EthernetInterfaces/"
                     "12446A3B0411")
@@ -102,7 +103,30 @@ class EthernetInterfaceCollectionTestCase(testtools.TestCase):
         path = ('proliantutils/tests/redfish/json_samples/'
                 'ethernet_interface.json')
         with open(path, 'r') as f:
-            self.conn.get.return_value.json.return_value = json.loads(f.read())
+            self.conn.get.return_value.json.return_value = json.loads(
+                f.read())['default']
         expected_summary = {'Port 1': '12:44:6A:3B:04:11'}
         actual_summary = self.sys_eth_col.summary
         self.assertEqual(expected_summary, actual_summary)
+
+    def test_get_uefi_device_path_by_mac(self):
+        self.conn.get.return_value.json.reset_mock()
+        path = ('proliantutils/tests/redfish/json_samples/'
+                'ethernet_interface.json')
+        with open(path, 'r') as f:
+            self.conn.get.return_value.json.return_value = json.loads(
+                f.read())['latest']
+        result = self.sys_eth_col.get_uefi_device_path_by_mac(
+            '98:f2:b3:2a:0e:3d')
+        self.assertEqual(
+            'PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)', result)
+
+    def test_get_all_macs(self):
+        self.conn.get.return_value.json.reset_mock()
+        path = ('proliantutils/tests/redfish/json_samples/'
+                'ethernet_interface.json')
+        with open(path, 'r') as f:
+            self.conn.get.return_value.json.return_value = json.loads(
+                f.read())['latest']
+        result = self.sys_eth_col.get_all_macs()
+        self.assertEqual(['98:f2:b3:2a:0e:3d'], result)

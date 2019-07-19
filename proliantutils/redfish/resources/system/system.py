@@ -627,3 +627,30 @@ class HPESystem(system.System):
                    'Error: %(error)s'
                    % {'error': str(e)})
             raise exception.IloError(msg)
+
+    def validate_macs(self, macs):
+        """Validate given macs are there in system
+
+        :param macs: List of macs
+        :raises: InvalidInputError, if macs not valid
+        """
+        macs_available = self.ethernet_interfaces.get_all_macs()
+        if not set(macs).issubset(macs_available):
+            msg = ("Given macs: %(macs)s not found in the system"
+                   % {'macs': str(macs)})
+            raise exception.InvalidInputError(msg)
+
+    def get_nic_association_name_by_mac(self, mac):
+        """Return nic association name by mac address
+
+        :returns: Nic association name. Ex. NicBoot1
+        """
+        mappings = self.bios_settings.bios_mappings.pci_settings_mappings
+        correlatable_id = self.ethernet_interfaces.get_uefi_device_path_by_mac(
+            mac)
+        for mapping in mappings:
+            for subinstance in mapping['Subinstances']:
+                for association in subinstance['Associations']:
+                    if subinstance.get('CorrelatableID') == correlatable_id:
+                        return [name for name in subinstance[
+                            'Associations'] if 'NicBoot' in name][0]
