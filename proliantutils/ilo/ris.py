@@ -1853,7 +1853,7 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         raise exception.IloError("Attribute 'Oem/Hp/PostState' "
                                  "not found on system.")
 
-    def get_current_bios_settings(self, only_allowed_settings=True):
+    def get_current_bios_settings(self, only_allowed_settings=False):
         """Get current BIOS settings.
 
         :param: only_allowed_settings: True when only allowed BIOS settings
@@ -1875,7 +1875,7 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
                 bios_settings, constants.SUPPORTED_BIOS_PROPERTIES)
         return bios_settings
 
-    def get_pending_bios_settings(self, only_allowed_settings=True):
+    def get_pending_bios_settings(self, only_allowed_settings=False):
         """Get current BIOS settings.
 
         :param: only_allowed_settings: True when only allowed BIOS settings
@@ -1910,7 +1910,7 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
                 config, constants.SUPPORTED_BIOS_PROPERTIES)
         return config
 
-    def set_bios_settings(self, data=None, only_allowed_settings=True):
+    def set_bios_settings(self, data=None, only_allowed_settings=False):
         """Sets current BIOS settings to the provided data.
 
         :param: only_allowed_settings: True when only allowed BIOS settings
@@ -1941,7 +1941,7 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
 
         self._change_bios_setting(data)
 
-    def get_default_bios_settings(self, only_allowed_settings=True):
+    def get_default_bios_settings(self, only_allowed_settings=False):
         """Get default BIOS settings.
 
         :param: only_allowed_settings: True when only allowed BIOS settings

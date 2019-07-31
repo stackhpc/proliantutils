@@ -740,7 +740,7 @@ class IloClient(operations.IloOperations):
         """
         return self._call_method('get_host_post_state')
 
-    def get_current_bios_settings(self, only_allowed_settings=True):
+    def get_current_bios_settings(self, only_allowed_settings=False):
         """Get current BIOS settings.
 
         :param: only_allowed_settings: True when only allowed BIOS settings
@@ -757,7 +757,7 @@ class IloClient(operations.IloOperations):
         return self._call_method('get_current_bios_settings',
                                  only_allowed_settings)
 
-    def get_pending_bios_settings(self, only_allowed_settings=True):
+    def get_pending_bios_settings(self, only_allowed_settings=False):
         """Get current BIOS settings.
 
         :param: only_allowed_settings: True when only allowed BIOS settings
@@ -774,7 +774,7 @@ class IloClient(operations.IloOperations):
         return self._call_method('get_pending_bios_settings',
                                  only_allowed_settings)
 
-    def set_bios_settings(self, data=None, only_allowed_settings=True):
+    def set_bios_settings(self, data=None, only_allowed_settings=False):
         """Sets current BIOS settings to the provided data.
 
         :param: only_allowed_settings: True when only allowed BIOS settings
@@ -791,7 +791,7 @@ class IloClient(operations.IloOperations):
         return self._call_method('set_bios_settings', data,
                                  only_allowed_settings)
 
-    def get_default_bios_settings(self, only_allowed_settings=True):
+    def get_default_bios_settings(self, only_allowed_settings=False):
         """Get default BIOS settings.
 
         :param: only_allowed_settings: True when only allowed BIOS settings
