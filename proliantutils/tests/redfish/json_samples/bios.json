@@ -236,7 +236,7 @@
     "UefiShellStartupUrlFromDhcp": "Disabled",
     "UncoreFreqScaling": "Auto",
     "UpiPrefetcher": "Enabled",
-    "UrlBootFile": "",
+    "UrlBootFile": "http://w.x.y.z/ironic.iso",
     "UrlBootFile2": "",
     "UrlBootFile3": "",
     "UrlBootFile4": "",
