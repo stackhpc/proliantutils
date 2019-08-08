@@ -1095,7 +1095,7 @@ class RedfishOperations(operations.IloOperations):
         sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
         return sushy_system.has_disk_erase_completed()
 
-    def get_current_bios_settings(self, only_allowed_settings=True):
+    def get_current_bios_settings(self, only_allowed_settings=False):
         """Get current BIOS settings.
 
         :param: only_allowed_settings: True when only allowed BIOS settings
@@ -1123,7 +1123,7 @@ class RedfishOperations(operations.IloOperations):
                 attributes, ilo_cons.SUPPORTED_REDFISH_BIOS_PROPERTIES)
         return attributes
 
-    def get_pending_bios_settings(self, only_allowed_settings=True):
+    def get_pending_bios_settings(self, only_allowed_settings=False):
         """Get pending BIOS settings.
 
         :param: only_allowed_settings: True when only allowed BIOS settings are
@@ -1151,7 +1151,7 @@ class RedfishOperations(operations.IloOperations):
                 attributes, ilo_cons.SUPPORTED_REDFISH_BIOS_PROPERTIES)
         return attributes
 
-    def set_bios_settings(self, data=None, only_allowed_settings=True):
+    def set_bios_settings(self, data=None, only_allowed_settings=False):
         """Sets current BIOS settings to the provided data.
 
         :param: only_allowed_settings: True when only allowed BIOS settings
@@ -1190,7 +1190,7 @@ class RedfishOperations(operations.IloOperations):
             LOG.debug(msg)
             raise exception.IloError(msg)
 
-    def get_default_bios_settings(self, only_allowed_settings=True):
+    def get_default_bios_settings(self, only_allowed_settings=False):
         """Get default BIOS settings.
 
         :param: only_allowed_settings: True when only allowed BIOS settings
