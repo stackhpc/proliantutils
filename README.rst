@@ -2,9 +2,9 @@ proliantutils
 =============
 
 **proliantutils** is a set of utility libraries for interfacing and managing
-various components (like iLO, HPSSA) for HP Proliant Servers.  This library
+various components (like iLO, HPSSA) for HPE Proliant Servers.  This library
 is used by iLO drivers in Ironic for managing Proliant Servers (though the
-library can be used by anyone who wants to manage HP Proliant servers).
+library can be used by anyone who wants to manage HPE Proliant servers).
 
 Please use launchpad_ to report bugs and ask questions.
 
