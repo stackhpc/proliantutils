@@ -21,7 +21,6 @@ import mock
 import sushy
 import testtools
 
-from sushy import auth
 from sushy.resources.system import system
 
 from proliantutils import exception
@@ -65,7 +64,8 @@ class RedfishOperationsTestCase(testtools.TestCase):
         self.assertEqual(('https://1.2.3.4',), args)
         self.assertFalse(kwargs.get('verify'))
         self.assertEqual('/redfish/v1/', kwargs.get('root_prefix'))
-        self.assertIsInstance(kwargs.get('auth'), auth.BasicAuth)
+        self.assertEqual('foo', kwargs.get('username'))
+        self.assertEqual('bar', kwargs.get('password'))
 
     @mock.patch.object(main, 'HPESushy', autospec=True)
     def test_sushy_init_fail(self, sushy_mock):

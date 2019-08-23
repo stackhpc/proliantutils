@@ -18,7 +18,6 @@ import json
 
 from six.moves.urllib import parse
 import sushy
-from sushy import auth
 from sushy.resources.system import mappings as sushy_map
 from sushy import utils
 
@@ -153,10 +152,9 @@ class RedfishOperations(operations.IloOperations):
         self._username = username
 
         try:
-            basic_auth = auth.BasicAuth(username=username, password=password)
             self._sushy = main.HPESushy(
-                address, root_prefix=root_prefix, verify=verify,
-                auth=basic_auth)
+                address, username=username, password=password,
+                root_prefix=root_prefix, verify=verify)
         except sushy.exceptions.SushyError as e:
             msg = (self._('The Redfish controller at "%(controller)s" has '
                           'thrown error. Error %(error)s') %
