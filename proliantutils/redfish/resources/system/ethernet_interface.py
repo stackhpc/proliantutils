@@ -65,7 +65,5 @@ class EthernetInterfaceCollection(base.ResourceCollectionBase):
 
     def get_all_macs(self):
         """Return list of macs available on system"""
-        macs = []
-        for mac in self.get_members():
-            macs.append(mac.mac_address.lower())
+        macs = [mac.mac_address.lower() for mac in self.get_members()]
         return macs

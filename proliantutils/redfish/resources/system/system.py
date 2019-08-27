@@ -637,12 +637,13 @@ class HPESystem(system.System):
         macs_available = self.ethernet_interfaces.get_all_macs()
         if not set(macs).issubset(macs_available):
             msg = ("Given macs: %(macs)s not found in the system"
-                   % {'macs': str(macs)})
+                   % {'macs': list(set(macs) - set(macs_available))})
             raise exception.InvalidInputError(msg)
 
     def get_nic_association_name_by_mac(self, mac):
         """Return nic association name by mac address
 
+        :mac: Mac address.
         :returns: Nic association name. Ex. NicBoot1
         """
         mappings = self.bios_settings.bios_mappings.pci_settings_mappings

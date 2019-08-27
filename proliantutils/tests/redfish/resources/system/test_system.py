@@ -1170,10 +1170,12 @@ class HPESystemTestCase(testtools.TestCase):
                 'ethernet_interface_collection.json')
         with open(path, 'r') as f:
             eth_coll = json.loads(f.read())
-        self.conn.get.return_value.json.side_effect = eth_coll
+        self.conn.get.return_value.json.side_effect = [eth_coll]
         get_all_macs_mock.return_value = [
             '12:44:6a:3b:04:11', '13:44:6a:3b:04:13']
         self.assertRaisesRegex(
             exception.InvalidInputError,
-            "Given macs: \['12:44:6A:3B:04:15'\] not found in the system",
-            self.sys_inst.validate_macs, ['12:44:6A:3B:04:15'])
+            "Given macs: \['14:23:AD:3B:4C:78'\] "
+            "not found in the system",
+            self.sys_inst.validate_macs,
+            ['12:44:6a:3b:04:11', '14:23:AD:3B:4C:78'])

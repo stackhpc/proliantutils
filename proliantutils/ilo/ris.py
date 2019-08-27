@@ -607,6 +607,7 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
     def _get_uefi_device_path_by_mac(self, mac):
         """Return uefi device path of mac.
 
+        :param mac: Mac address.
         :returns: Uefi Device path.
                   Ex. 'PciRoot(0x0)/Pci(0x2,0x3)/Pci(0x0,0x0)'
         """
@@ -621,6 +622,7 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
     def _get_nic_association_name_by_mac(self, mac):
         """Return nic association name by mac address
 
+        :param mac: Mac address.
         :returns: Nic association name. Ex. NicBoot1
         """
         headers, bios_uri, bios_settings = self._check_bios_resource()
@@ -658,7 +660,7 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         macs_available = self._get_all_macs()
         if not set(macs).issubset(macs_available):
             msg = ("Given macs: %(macs)s not found in the system"
-                   % {'macs': str(macs)})
+                   % {'macs': list(set(macs) - set(macs_available))})
             raise exception.InvalidInputError(msg)
 
     def _change_iscsi_settings(self, iscsi_info, macs=[]):
