@@ -1,6 +1,17 @@
 CHANGES
 =======
 
+2.7.1
+-----
+
+* Adds Inband disk erase support for SSD disk drives
+* Adds support for '10','50,'60' raid level
+* Fixes the issue of nic capacity calculation
+* Fixes issue of iLO firmware update using 'update\_firmware\_sum'
+* Adds support for IPv6 network
+* Fixes the issue of storage capabilities
+* Cache the IloClient object creation
+
 2.7.0
 -----
 * Fix ssacli output parsing
