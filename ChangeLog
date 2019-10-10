@@ -1,6 +1,17 @@
 CHANGES
 =======
 
+2.6.1
+-----
+
+* Fixes the issue of ssacli output parsing
+* Adds Inband disk erase support for SSD disk drives
+* Fixes the issue of nic capacity calculation
+* Validates the BIOS settings before applying
+* Fixes issue of iLO firmware update using 'update\_firmware\_sum'
+* Fixes the issue of storage capabilities
+* Cache the IloClient object creation
+
 2.6.0
 -----
 * Add support to manage BIOS settings for Gen9 and Gen10 servers
