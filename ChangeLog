@@ -1,6 +1,17 @@
 CHANGES
 =======
 
+2.5.1
+-----
+
+* Adds Inband disk erase support for SSD disk drives
+* Fixes the issue of nic capacity calculation
+* Fixes session issue for Gen10 servers
+* Fixes the issue of ssacli output parsing
+* Fixes issue with secure_boot capability
+* Remove the disk erase timeout
+* Fixes the issue of storage capabilities
+
 2.5.0
 -----
 
