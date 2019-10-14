@@ -1,6 +1,20 @@
 CHANGES
 =======
 
+2.4.2
+-----
+
+* Adds Inband disk erase support for SSD disk drives
+* Fixes the issue of nic capacity calculation
+* Redfish: [Fix] Model number string for Gen9 and above
+* Adds support for firmware update using SUM
+* Fixes the issue of ssacli output parsing
+* Fixes issue with secure_boot capability
+* Remove the disk erase timeout
+* Fixes the issue of storage capabilities
+* Retry power on operation for Blade servers
+* Redfish: Adds HPEConnector to proliantutils
+
 2.4.0
 -----
 
