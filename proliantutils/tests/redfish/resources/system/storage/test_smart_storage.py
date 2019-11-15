@@ -29,14 +29,15 @@ class HPESmartStorageTestCase(testtools.TestCase):
         storage_file = ('proliantutils/tests/redfish/json_samples'
                         '/smart_storage.json')
         with open(storage_file, 'r') as f:
-            self.conn.get.return_value.json.return_value = json.loads(f.read())
+            self.json_doc = json.load(f)
+        self.conn.get.return_value.json.return_value = self.json_doc
 
         path = ("/redfish/v1/Systems/1/SmartStorage")
         self.sys_stor = smart_storage.HPESmartStorage(
-            self.conn, path, redfish_version='1.0.2')
+            self.conn, path, '1.0.2', None)
 
     def test__parse_attributes(self):
-        self.sys_stor._parse_attributes()
+        self.sys_stor._parse_attributes(self.json_doc)
         self.assertEqual('1.0.2', self.sys_stor.redfish_version)
 
     def test_array_controllers(self):

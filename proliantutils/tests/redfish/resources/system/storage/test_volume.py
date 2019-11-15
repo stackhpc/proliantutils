@@ -27,14 +27,15 @@ class VolumeTestCase(testtools.TestCase):
         self.conn = mock.Mock()
         vol_file = 'proliantutils/tests/redfish/json_samples/volume.json'
         with open(vol_file, 'r') as f:
-            self.conn.get.return_value.json.return_value = json.loads(f.read())
+            self.json_doc = json.load(f)
+            self.conn.get.return_value.json.return_value = self.json_doc
 
         vol_path = ("/redfish/v1/Systems/437XR1138R2/Storage/1/Volumes/1")
         self.sys_vol = volume.Volume(
-            self.conn, vol_path, redfish_version='1.0.2')
+            self.conn, vol_path, '1.0.2', None)
 
     def test__parse_attributes(self):
-        self.sys_vol._parse_attributes()
+        self.sys_vol._parse_attributes(self.json_doc)
         self.assertEqual('1.0.2', self.sys_vol.redfish_version)
         self.assertEqual('1', self.sys_vol.identity)
         self.assertEqual(899527000000, self.sys_vol.capacity_bytes)
@@ -47,13 +48,14 @@ class VolumeCollectionTestCase(testtools.TestCase):
         self.conn = mock.Mock()
         with open('proliantutils/tests/redfish/json_samples/'
                   'volume_collection.json', 'r') as f:
-            self.conn.get.return_value.json.return_value = json.loads(f.read())
+            self.json_doc = json.load(f)
+            self.conn.get.return_value.json.return_value = self.json_doc
         self.sys_vol_col = volume.VolumeCollection(
             self.conn, '/redfish/v1/Systems/437XR1138R2/Storage/1/Volumes',
-            redfish_version='1.0.2')
+            '1.0.2', None)
 
     def test__parse_attributes(self):
-        self.sys_vol_col._parse_attributes()
+        self.sys_vol_col._parse_attributes(self.json_doc)
         self.assertEqual('1.0.2', self.sys_vol_col.redfish_version)
         self.assertEqual('Storage Volume Collection',
                          self.sys_vol_col.name)
@@ -67,7 +69,7 @@ class VolumeCollectionTestCase(testtools.TestCase):
         mock_vol.assert_called_once_with(
             self.sys_vol_col._conn,
             ('/redfish/v1/Systems/437XR1138R2/Volumes/1'),
-            redfish_version=self.sys_vol_col.redfish_version)
+            self.sys_vol_col.redfish_version, None)
 
     @mock.patch.object(volume, 'Volume', autospec=True)
     def test_get_members(self, mock_vol):
@@ -75,7 +77,7 @@ class VolumeCollectionTestCase(testtools.TestCase):
         vol_path = ("/redfish/v1/Systems/437XR1138R2/Storage/1/Volumes/1")
         calls = [
             mock.call(self.sys_vol_col._conn, vol_path,
-                      redfish_version=self.sys_vol_col.redfish_version),
+                      self.sys_vol_col.redfish_version, None),
         ]
         mock_vol.assert_has_calls(calls)
         self.assertIsInstance(members, list)

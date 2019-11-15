@@ -28,15 +28,15 @@ class PCIDeviceTestCase(testtools.TestCase):
         self.conn = mock.Mock()
         pci_file = 'proliantutils/tests/redfish/json_samples/pci_device.json'
         with open(pci_file, 'r') as f:
-            self.conn.get.return_value.json.return_value = (
-                json.loads(f.read()))
+            self.json_doc = json.load(f)
+        self.conn.get.return_value.json.return_value = self.json_doc
 
         pci_path = "/redfish/v1/Systems/1/PCIDevices/1"
         self.sys_pci = pci_device.PCIDevice(
-            self.conn, pci_path, redfish_version='1.0.2')
+            self.conn, pci_path, '1.0.2', None)
 
     def test__parse_attributes(self):
-        self.sys_pci._parse_attributes()
+        self.sys_pci._parse_attributes(self.json_doc)
         self.assertEqual('1.0.2', self.sys_pci.redfish_version)
         self.assertEqual('1', self.sys_pci.identity)
         self.assertEqual(1, self.sys_pci.nic_capacity)
@@ -48,14 +48,15 @@ class PCIDeviceCollectionTestCase(testtools.TestCase):
         super(PCIDeviceCollectionTestCase, self).setUp()
         self.conn = mock.Mock()
         with open('proliantutils/tests/redfish/json_samples/'
-                  'pci_device_collection.json', 'r') as f:
-            self.conn.get.return_value.json.return_value = json.loads(f.read())
+                  'pci_device_collection.json') as f:
+            self.json_doc = json.load(f)
+        self.conn.get.return_value.json.return_value = self.json_doc
         self.sys_pci_col = pci_device.PCIDeviceCollection(
             self.conn, '/redfish/v1/Systems/1/PCIDevices',
             redfish_version='1.0.2')
 
     def test__parse_attributes(self):
-        self.sys_pci_col._parse_attributes()
+        self.sys_pci_col._parse_attributes(self.json_doc)
         self.assertEqual('1.0.2', self.sys_pci_col.redfish_version)
         self.assertEqual('PciDevices', self.sys_pci_col.name)
         pci_path = ('/redfish/v1/Systems/1/PCIDevices/1',
@@ -69,7 +70,7 @@ class PCIDeviceCollectionTestCase(testtools.TestCase):
         mock_pci.assert_called_once_with(
             self.sys_pci_col._conn,
             ('/redfish/v1/Systems/1/PCIDevices/1'),
-            redfish_version=self.sys_pci_col.redfish_version)
+            self.sys_pci_col.redfish_version, None)
 
     @mock.patch.object(pci_device, 'PCIDevice', autospec=True)
     def test_get_members(self, mock_pci):
@@ -78,9 +79,9 @@ class PCIDeviceCollectionTestCase(testtools.TestCase):
                      "/redfish/v1/Systems/1/PCIDevices/6"]
         calls = [
             mock.call(self.sys_pci_col._conn, path_list[0],
-                      redfish_version=self.sys_pci_col.redfish_version),
+                      self.sys_pci_col.redfish_version, None),
             mock.call(self.sys_pci_col._conn, path_list[1],
-                      redfish_version=self.sys_pci_col.redfish_version)
+                      self.sys_pci_col.redfish_version, None)
         ]
         mock_pci.assert_has_calls(calls)
         self.assertIsInstance(members, list)

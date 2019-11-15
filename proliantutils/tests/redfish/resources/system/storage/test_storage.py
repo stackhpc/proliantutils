@@ -26,22 +26,22 @@ class StorageTestCase(testtools.TestCase):
         super(StorageTestCase, self).setUp()
         self.conn = mock.Mock()
         storage_file = 'proliantutils/tests/redfish/json_samples/storage.json'
-        with open(storage_file, 'r') as f:
-            self.conn.get.return_value.json.return_value = json.loads(f.read())
-        self.stor_json = self.conn.get.return_value.json.return_value
+        with open(storage_file) as f:
+            self.json_doc = json.load(f)
+        self.conn.get.return_value.json.return_value = self.json_doc
 
         path = ("/redfish/v1/Systems/437XR1138R2/Storage/1")
         self.sys_stor = storage.Storage(
             self.conn, path, redfish_version='1.0.2')
 
     def test__parse_attributes(self):
-        self.sys_stor._parse_attributes()
+        self.sys_stor._parse_attributes(self.json_doc)
         self.assertEqual('1.0.2', self.sys_stor.redfish_version)
         self.assertEqual('1', self.sys_stor.identity)
         self.assertEqual('Local Storage Controller', self.sys_stor.name)
         self.assertEqual('Integrated RAID Controller',
                          self.sys_stor.description)
-        self.assertEqual(self.stor_json.get('Drives'),
+        self.assertEqual(self.json_doc.get('Drives'),
                          self.sys_stor.drives)
 
     def test_volumes(self):
@@ -149,14 +149,15 @@ class StorageCollectionTestCase(testtools.TestCase):
         super(StorageCollectionTestCase, self).setUp()
         self.conn = mock.Mock()
         with open('proliantutils/tests/redfish/json_samples/'
-                  'storage_collection.json', 'r') as f:
-            self.conn.get.return_value.json.return_value = json.loads(f.read())
+                  'storage_collection.json') as f:
+            self.json_doc = json.load(f)
+        self.conn.get.return_value.json.return_value = self.json_doc
         self.sys_stor_col = storage.StorageCollection(
             self.conn, '/redfish/v1/Systems/437XR1138R2/Storage',
             redfish_version='1.0.2')
 
     def test__parse_attributes(self):
-        self.sys_stor_col._parse_attributes()
+        self.sys_stor_col._parse_attributes(self.json_doc)
         self.assertEqual('1.0.2', self.sys_stor_col.redfish_version)
         self.assertEqual('Storage Collection',
                          self.sys_stor_col.name)
@@ -170,7 +171,7 @@ class StorageCollectionTestCase(testtools.TestCase):
         mock_eth.assert_called_once_with(
             self.sys_stor_col._conn,
             ('/redfish/v1/Systems/437XR1138R2/Storage/1'),
-            redfish_version=self.sys_stor_col.redfish_version)
+            self.sys_stor_col.redfish_version, None)
 
     @mock.patch.object(storage, 'Storage', autospec=True)
     def test_get_members(self, mock_eth):
@@ -178,7 +179,7 @@ class StorageCollectionTestCase(testtools.TestCase):
         path = ("/redfish/v1/Systems/437XR1138R2/Storage/1")
         calls = [
             mock.call(self.sys_stor_col._conn, path,
-                      redfish_version=self.sys_stor_col.redfish_version),
+                      self.sys_stor_col.redfish_version, None),
         ]
         mock_eth.assert_has_calls(calls)
         self.assertIsInstance(members, list)
