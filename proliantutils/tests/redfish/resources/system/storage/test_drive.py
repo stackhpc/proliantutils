@@ -27,9 +27,10 @@ class DriveTestCase(testtools.TestCase):
         super(DriveTestCase, self).setUp()
         self.conn = mock.Mock()
         drive_file = 'proliantutils/tests/redfish/json_samples/drive.json'
-        with open(drive_file, 'r') as f:
-            dr_json = json.loads(f.read())
-            self.conn.get.return_value.json.return_value = dr_json['drive1']
+        with open(drive_file) as f:
+            self.json_doc = json.load(f)
+            self.conn.get.return_value.json.return_value = (
+                self.json_doc['drive1'])
 
         drive_path = ("/redfish/v1/Systems/437XR1138R2/Storage/1/"
                       "Drives/35D38F11ACEF7BD3")
@@ -37,7 +38,7 @@ class DriveTestCase(testtools.TestCase):
             self.conn, drive_path, redfish_version='1.0.2')
 
     def test__parse_attributes(self):
-        self.sys_drive._parse_attributes()
+        self.sys_drive._parse_attributes(self.json_doc['drive1'])
         self.assertEqual('1.0.2', self.sys_drive.redfish_version)
         self.assertEqual(899527000000, self.sys_drive.capacity_bytes)
         self.assertEqual(constants.PROTOCOL_SAS, self.sys_drive.protocol)

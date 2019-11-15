@@ -27,17 +27,18 @@ class HPEPhysicalDriveTestCase(testtools.TestCase):
         self.conn = mock.Mock()
         logical_file = ('proliantutils/tests/redfish/json_samples/'
                         'disk_drive.json')
-        with open(logical_file, 'r') as f:
-            dr_json = json.loads(f.read())
-            self.conn.get.return_value.json.return_value = dr_json['drive1']
+        with open(logical_file) as f:
+            self.json_doc = json.load(f)
+            self.conn.get.return_value.json.return_value = (
+                self.json_doc['drive1'])
 
         path = ("/redfish/v1/Systems/1/SmartStorage/"
                 "ArrayControllers/0/DiskDrives")
         self.sys_stor = physical_drive.HPEPhysicalDrive(
-            self.conn, path, redfish_version='1.0.2')
+            self.conn, path, '1.0.2', None)
 
     def test__parse_attributes(self):
-        self.sys_stor._parse_attributes()
+        self.sys_stor._parse_attributes(self.json_doc['drive1'])
         self.assertEqual('1.0.2', self.sys_stor.redfish_version)
         self.assertEqual(600, self.sys_stor.capacity_gb)
         self.assertEqual('KWGER73R', self.sys_stor.serial_number)
@@ -50,14 +51,15 @@ class HPEPhysicalDriveCollectionTestCase(testtools.TestCase):
         self.conn = mock.Mock()
         with open('proliantutils/tests/redfish/json_samples/'
                   'disk_drive_collection.json', 'r') as f:
-            self.conn.get.return_value.json.return_value = json.loads(f.read())
+            self.json_doc = json.load(f)
+            self.conn.get.return_value.json.return_value = self.json_doc
         self.sys_stor_col = physical_drive.HPEPhysicalDriveCollection(
             self.conn, ('/redfish/v1/Systems/1/SmartStorage/'
                         'ArrayControllers/0/DiskDrives'),
             redfish_version='1.0.2')
 
     def test__parse_attributes(self):
-        self.sys_stor_col._parse_attributes()
+        self.sys_stor_col._parse_attributes(self.json_doc)
         self.assertEqual('1.0.2', self.sys_stor_col.redfish_version)
         self.assertEqual('HpeSmartStorageDiskDrives',
                          self.sys_stor_col.name)
@@ -76,7 +78,7 @@ class HPEPhysicalDriveCollectionTestCase(testtools.TestCase):
             self.sys_stor_col._conn,
             ('/redfish/v1/Systems/1/SmartStorage/ArrayControllers/0/'
              'DiskDrives/3'),
-            redfish_version=self.sys_stor_col.redfish_version)
+            self.sys_stor_col.redfish_version, None)
 
     @mock.patch.object(physical_drive, 'HPEPhysicalDrive', autospec=True)
     def test_get_members(self, mock_eth):
@@ -87,9 +89,9 @@ class HPEPhysicalDriveCollectionTestCase(testtools.TestCase):
                  "0/DiskDrives/4")
         calls = [
             mock.call(self.sys_stor_col._conn, path,
-                      redfish_version=self.sys_stor_col.redfish_version),
+                      self.sys_stor_col.redfish_version, None),
             mock.call(self.sys_stor_col._conn, path2,
-                      redfish_version=self.sys_stor_col.redfish_version),
+                      self.sys_stor_col.redfish_version, None),
         ]
         mock_eth.assert_has_calls(calls)
         self.assertIsInstance(members, list)

@@ -27,16 +27,17 @@ class HPELogicalDriveTestCase(testtools.TestCase):
         self.conn = mock.Mock()
         logical_file = ('proliantutils/tests/redfish/json_samples/'
                         'logical_drive.json')
-        with open(logical_file, 'r') as f:
-            self.conn.get.return_value.json.return_value = json.loads(f.read())
+        with open(logical_file) as f:
+            self.json_doc = json.load(f)
+        self.conn.get.return_value.json.return_value = self.json_doc
 
         path = ("/redfish/v1/Systems/1/SmartStorage/"
                 "ArrayControllers/0/LogicalDrives")
         self.sys_stor = logical_drive.HPELogicalDrive(
-            self.conn, path, redfish_version='1.0.2')
+            self.conn, path, '1.0.2', None)
 
     def test__parse_attributes(self):
-        self.sys_stor._parse_attributes()
+        self.sys_stor._parse_attributes(self.json_doc)
         self.assertEqual('1.0.2', self.sys_stor.redfish_version)
 
 
@@ -46,15 +47,16 @@ class HPELogicalDriveCollectionTestCase(testtools.TestCase):
         super(HPELogicalDriveCollectionTestCase, self).setUp()
         self.conn = mock.Mock()
         with open('proliantutils/tests/redfish/json_samples/'
-                  'logical_drive_collection.json', 'r') as f:
-            self.conn.get.return_value.json.return_value = json.loads(f.read())
+                  'logical_drive_collection.json') as f:
+            self.json_doc = json.load(f)
+        self.conn.get.return_value.json.return_value = self.json_doc
         self.sys_stor_col = logical_drive.HPELogicalDriveCollection(
             self.conn, ('/redfish/v1/Systems/1/SmartStorage/'
                         'ArrayControllers/0/LogicalDrives'),
             redfish_version='1.0.2')
 
     def test__parse_attributes(self):
-        self.sys_stor_col._parse_attributes()
+        self.sys_stor_col._parse_attributes(self.json_doc)
         self.assertEqual('1.0.2', self.sys_stor_col.redfish_version)
         self.assertEqual('HpeSmartStorageLogicalDrives',
                          self.sys_stor_col.name)
@@ -73,7 +75,7 @@ class HPELogicalDriveCollectionTestCase(testtools.TestCase):
             self.sys_stor_col._conn,
             ('/redfish/v1/Systems/1/SmartStorage/ArrayControllers/0/'
              'LogicalDrives/1'),
-            redfish_version=self.sys_stor_col.redfish_version)
+            self.sys_stor_col.redfish_version, None)
 
     @mock.patch.object(logical_drive, 'HPELogicalDrive', autospec=True)
     def test_get_members(self, mock_eth):
@@ -84,9 +86,9 @@ class HPELogicalDriveCollectionTestCase(testtools.TestCase):
                  "0/LogicalDrives/2")
         calls = [
             mock.call(self.sys_stor_col._conn, path1,
-                      redfish_version=self.sys_stor_col.redfish_version),
+                      self.sys_stor_col.redfish_version, None),
             mock.call(self.sys_stor_col._conn, path2,
-                      redfish_version=self.sys_stor_col.redfish_version),
+                      self.sys_stor_col.redfish_version, None),
         ]
         mock_eth.assert_has_calls(calls)
         self.assertIsInstance(members, list)

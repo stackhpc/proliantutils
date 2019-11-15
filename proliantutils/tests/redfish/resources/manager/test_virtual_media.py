@@ -33,7 +33,7 @@ class VirtualMediaCollectionTestCase(testtools.TestCase):
         super(VirtualMediaCollectionTestCase, self).setUp()
         self.conn = mock.MagicMock()
         with open('proliantutils/tests/redfish/'
-                  'json_samples/vmedia_collection.json', 'r') as f:
+                  'json_samples/vmedia_collection.json') as f:
             self.conn.get.return_value.json.return_value = (
                 json.loads(f.read()))
 
@@ -59,10 +59,10 @@ class VirtualMediaTestCase(testtools.TestCase):
         super(VirtualMediaTestCase, self).setUp()
         self.conn = mock.MagicMock()
         with open('proliantutils/tests/redfish/'
-                  'json_samples/vmedia.json', 'r') as f:
-            vmedia_json = json.loads(f.read())
+                  'json_samples/vmedia.json') as f:
+            self.json_doc = json.load(f)
 
-        self.conn.get.return_value.json.return_value = vmedia_json[
+        self.conn.get.return_value.json.return_value = self.json_doc[
             'default']
 
         self.vmedia_inst = virtual_media.VirtualMedia(
@@ -70,7 +70,7 @@ class VirtualMediaTestCase(testtools.TestCase):
             redfish_version='1.0.2')
 
     def test__parse_attributes(self):
-        self.vmedia_inst._parse_attributes()
+        self.vmedia_inst._parse_attributes(self.json_doc['default'])
         self.assertEqual(['cd', 'dvd'], self.vmedia_inst.media_types)
         self.assertEqual(False, self.vmedia_inst.inserted)
 
@@ -78,7 +78,7 @@ class VirtualMediaTestCase(testtools.TestCase):
         self.vmedia_inst.json.pop('Oem')
         self.assertRaisesRegex(
             exceptions.MissingAttributeError, 'attribute Oem/Hpe/Actions',
-            self.vmedia_inst._parse_attributes)
+            self.vmedia_inst._parse_attributes, self.json_doc)
 
     def test__get_action_element_insert(self):
         value = self.vmedia_inst._get_action_element('insert')

@@ -27,21 +27,21 @@ class SimpleStorageTestCase(testtools.TestCase):
         self.conn = mock.Mock()
         simple_file = ('proliantutils/tests/redfish/json_samples/'
                        'simple_storage.json')
-        with open(simple_file, 'r') as f:
-            self.simple_json = json.loads(f.read())
-            self.conn.get.return_value.json.return_value = self.simple_json
+        with open(simple_file) as f:
+            self.json_doc = json.load(f)
+        self.conn.get.return_value.json.return_value = self.json_doc
 
         simple_path = ("/redfish/v1/Systems/437XR1138R2/SimpleStorage/1")
         self.sys_simple = simple_storage.SimpleStorage(
-            self.conn, simple_path, redfish_version='1.0.2')
+            self.conn, simple_path, '1.0.2', None)
 
     def test__parse_attributes(self):
-        self.sys_simple._parse_attributes()
+        self.sys_simple._parse_attributes(self.json_doc)
         self.assertEqual('1.0.2', self.sys_simple.redfish_version)
         self.assertEqual('1', self.sys_simple.identity)
         self.assertEqual('Simple Storage Controller', self.sys_simple.name)
         self.assertEqual('System SATA', self.sys_simple.description)
-        self.assertEqual(self.simple_json.get('Devices'),
+        self.assertEqual(self.json_doc.get('Devices'),
                          self.sys_simple.devices)
 
     def test_maximum_size_bytes(self):
@@ -61,13 +61,14 @@ class SimpleStorageCollectionTestCase(testtools.TestCase):
         self.conn = mock.Mock()
         with open('proliantutils/tests/redfish/json_samples/'
                   'simple_storage_collection.json', 'r') as f:
-            self.conn.get.return_value.json.return_value = json.loads(f.read())
+            self.json_doc = json.load(f)
+        self.conn.get.return_value.json.return_value = self.json_doc
         self.sys_simple_col = simple_storage.SimpleStorageCollection(
             self.conn, '/redfish/v1/Systems/437XR1138R2/SimpleStorage',
-            redfish_version='1.0.2')
+            '1.0.2', None)
 
     def test__parse_attributes(self):
-        self.sys_simple_col._parse_attributes()
+        self.sys_simple_col._parse_attributes(self.json_doc)
         self.assertEqual('1.0.2', self.sys_simple_col.redfish_version)
         self.assertEqual('Simple Storage Collection',
                          self.sys_simple_col.name)
@@ -81,7 +82,7 @@ class SimpleStorageCollectionTestCase(testtools.TestCase):
         mock_simple.assert_called_once_with(
             self.sys_simple_col._conn,
             '/redfish/v1/Systems/437XR1138R2/SimpleStorage/1',
-            redfish_version=self.sys_simple_col.redfish_version)
+            self.sys_simple_col.redfish_version, None)
 
     @mock.patch.object(simple_storage, 'SimpleStorage', autospec=True)
     def test_get_members(self, mock_simple):
@@ -89,7 +90,7 @@ class SimpleStorageCollectionTestCase(testtools.TestCase):
         simple_path = ("/redfish/v1/Systems/437XR1138R2/SimpleStorage/1")
         calls = [
             mock.call(self.sys_simple_col._conn, simple_path,
-                      redfish_version=self.sys_simple_col.redfish_version),
+                      self.sys_simple_col.redfish_version, None),
         ]
         mock_simple.assert_has_calls(calls)
         self.assertIsInstance(members, list)

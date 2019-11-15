@@ -30,16 +30,16 @@ class EthernetInterfaceTestCase(testtools.TestCase):
         eth_file = ('proliantutils/tests/redfish/json_samples/'
                     'ethernet_interface.json')
         with open(eth_file, 'r') as f:
-            self.conn.get.return_value.json.return_value = json.loads(
-                f.read())['default']
+            self.json_doc = json.load(f)
+        self.conn.get.return_value.json.return_value = self.json_doc['default']
 
         eth_path = ("/redfish/v1/Systems/437XR1138R2/EthernetInterfaces/"
                     "12446A3B0411")
         self.sys_eth = ethernet_interface.EthernetInterface(
-            self.conn, eth_path, redfish_version='1.0.2')
+            self.conn, eth_path, '1.0.2', None)
 
     def test__parse_attributes(self):
-        self.sys_eth._parse_attributes()
+        self.sys_eth._parse_attributes(self.json_doc['default'])
         self.assertEqual('1.0.2', self.sys_eth.redfish_version)
         self.assertEqual('1', self.sys_eth.identity)
         self.assertEqual('Ethernet Interface', self.sys_eth.name)
@@ -60,13 +60,14 @@ class EthernetInterfaceCollectionTestCase(testtools.TestCase):
         self.conn = mock.Mock()
         with open('proliantutils/tests/redfish/json_samples/'
                   'ethernet_interface_collection.json', 'r') as f:
-            self.conn.get.return_value.json.return_value = json.loads(f.read())
+            self.json_doc = json.load(f)
+        self.conn.get.return_value.json.return_value = self.json_doc
         self.sys_eth_col = ethernet_interface.EthernetInterfaceCollection(
             self.conn, '/redfish/v1/Systems/437XR1138R2/EthernetInterfaces',
-            redfish_version='1.0.2')
+            '1.0.2', None)
 
     def test__parse_attributes(self):
-        self.sys_eth_col._parse_attributes()
+        self.sys_eth_col._parse_attributes(self.json_doc)
         self.assertEqual('1.0.2', self.sys_eth_col.redfish_version)
         self.assertEqual('Ethernet Interface Collection',
                          self.sys_eth_col.name)
@@ -83,7 +84,7 @@ class EthernetInterfaceCollectionTestCase(testtools.TestCase):
             self.sys_eth_col._conn,
             ('/redfish/v1/Systems/437XR1138R2/EthernetInterfaces/'
              '12446A3B0411'),
-            redfish_version=self.sys_eth_col.redfish_version)
+            self.sys_eth_col.redfish_version, None)
 
     @mock.patch.object(ethernet_interface, 'EthernetInterface', autospec=True)
     def test_get_members(self, mock_eth):
@@ -92,7 +93,7 @@ class EthernetInterfaceCollectionTestCase(testtools.TestCase):
                     "12446A3B0411")
         calls = [
             mock.call(self.sys_eth_col._conn, eth_path,
-                      redfish_version=self.sys_eth_col.redfish_version),
+                      self.sys_eth_col.redfish_version, None),
         ]
         mock_eth.assert_has_calls(calls)
         self.assertIsInstance(members, list)
