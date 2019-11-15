@@ -55,9 +55,10 @@ class IloCacheNodeTestCase(testtools.TestCase):
 class IloClientWrapperTestCase(testtools.TestCase):
 
     class DummyClass(object):
-        def __init__(self, ip, name):
+        def __init__(self, ip, name, password):
             self._ip = ip
             self._name = name
+            self._password = password
 
     original_cls, decorated_cls = get_cls_wrapper(DummyClass)
 
@@ -65,28 +66,28 @@ class IloClientWrapperTestCase(testtools.TestCase):
 
     @mock.patch.object(wrapper_cls, '_create_instance')
     @mock.patch.object(wrapper_cls, '_if_not_exists')
-    def test___call___new(self, exists_mock, create_mock):
+    def test___call___already_created(self, exists_mock, create_mock):
         exists_mock.return_value = True
         try:
             wrapper_obj = IloClientWrapperTestCase.wrapper_cls(
                 IloClientWrapperTestCase.original_cls)
-            wrapper_obj('a.b.c.d', 'abcd')
+            wrapper_obj('a.b.c.d', 'abcd', 'deaf')
         except KeyError:
             pass
-        exists_mock.assert_called_once_with('a.b.c.d')
-        create_mock.assert_called_once_with('a.b.c.d', 'abcd')
+        exists_mock.assert_called_once_with(('a.b.c.d', 'abcd', 'deaf'))
+        create_mock.assert_called_once_with('a.b.c.d', 'abcd', 'deaf')
 
     @mock.patch.object(wrapper_cls, '_create_instance')
     @mock.patch.object(wrapper_cls, '_if_not_exists')
-    def test___call___already_created(self, exists_mock, create_mock):
+    def test___call___new(self, exists_mock, create_mock):
         exists_mock.return_value = False
         try:
             wrapper_obj = IloClientWrapperTestCase.wrapper_cls(
                 IloClientWrapperTestCase.original_cls)
-            wrapper_obj('a.b.c.d', 'abcd')
+            wrapper_obj('a.b.c.d', 'abcd', 'deaf')
         except KeyError:
             pass
-        exists_mock.assert_called_once_with('a.b.c.d')
+        exists_mock.assert_called_once_with(('a.b.c.d', 'abcd', 'deaf'))
         create_mock.assert_not_called()
 
     @mock.patch.object(original_cls, '__init__')
@@ -96,8 +97,8 @@ class IloClientWrapperTestCase(testtools.TestCase):
         wrapper_obj = IloClientWrapperTestCase.wrapper_cls(
             IloClientWrapperTestCase.original_cls)
         wrapper_obj.MAX_CACHE_SIZE = 2
-        wrapper_obj._create_instance('a.b.c.d', 'abcd')
-        init_mock.assert_called_once_with('a.b.c.d', 'abcd')
+        wrapper_obj._create_instance('a.b.c.d', 'abcd', 'defe')
+        init_mock.assert_called_once_with('a.b.c.d', 'abcd', 'defe')
         pop_mock.assert_not_called()
 
     @mock.patch.object(original_cls, '__init__')
@@ -107,21 +108,21 @@ class IloClientWrapperTestCase(testtools.TestCase):
         wrapper_obj = IloClientWrapperTestCase.wrapper_cls(
             IloClientWrapperTestCase.original_cls)
         wrapper_obj.MAX_CACHE_SIZE = 2
-        wrapper_obj._create_instance('a.b.c.d', 'abcd')
-        wrapper_obj._create_instance('e.f.g.h', 'efgh')
-        wrapper_obj._create_instance('i.j.k.l', 'ijkl')
+        wrapper_obj._create_instance('a.b.c.d', 'abcd', 'deaf')
+        wrapper_obj._create_instance('e.f.g.h', 'efgh', 'deaf')
+        wrapper_obj._create_instance('i.j.k.l', 'ijkl', 'deaf')
         pop_mock.assert_called_once_with()
 
     def test__pop_oldest_node(self):
         wrapper_obj = IloClientWrapperTestCase.wrapper_cls(
             IloClientWrapperTestCase.original_cls)
         wrapper_obj.MAX_CACHE_SIZE = 2
-        wrapper_obj('a.b.c.d', 'abcd')
-        wrapper_obj('e.f.g.h', 'efgh')
-        wrapper_obj('i.j.k.l', 'ijkl')
-        self.assertIn('i.j.k.l', wrapper_obj._instances)
-        self.assertIn('e.f.g.h', wrapper_obj._instances)
-        self.assertNotIn('a.b.c.d', wrapper_obj._instances)
+        wrapper_obj('a.b.c.d', 'abcd', 'deaf')
+        wrapper_obj('e.f.g.h', 'efgh', 'deaf')
+        wrapper_obj('i.j.k.l', 'ijkl', 'deaf')
+        self.assertIn(('i.j.k.l', 'ijkl', 'deaf'), wrapper_obj._instances)
+        self.assertIn(('e.f.g.h', 'efgh', 'deaf'), wrapper_obj._instances)
+        self.assertNotIn(('a.b.c.d', 'ijkl', 'deaf'), wrapper_obj._instances)
 
 
 class IloClientInitTestCase(testtools.TestCase):

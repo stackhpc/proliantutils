@@ -136,12 +136,15 @@ def cache_node(cache=True):
                     self.cls = cls
                     self._instances = collections.OrderedDict()
 
-                def _if_not_exists(self, address):
-                    return (address not in self._instances)
+                def _if_not_exists(self, ilo_info):
+                    return (ilo_info not in self._instances)
 
                 def _create_instance(self, *args, **kwargs):
                     address = args[0]
-                    self._instances[address] = self.cls(*args, **kwargs)
+                    admin = args[1]
+                    admin_pass = args[2]
+                    self._instances[(address, admin, admin_pass)] = (
+                        self.cls(*args, **kwargs))
                     # Check for max_cache_size
                     if len(self._instances) > self.MAX_CACHE_SIZE:
                         LOG.debug("Node cache hit the maximum size of %d." % (
@@ -152,20 +155,23 @@ def cache_node(cache=True):
                     if not args:
                         LOG.error("Error creating iLO object.")
                     address = args[0]
+                    admin = args[1]
+                    admin_pass = args[2]
 
-                    if self._if_not_exists(address):
+                    if self._if_not_exists((address, admin, admin_pass)):
                         LOG.debug("Creating iLO object for node %(address)s.",
                                   {'address': address})
                         self._create_instance(*args, **kwargs)
                     else:
                         LOG.debug("Using existing object for node "
                                   "%(address)s.", {'address': address})
-                    return self._instances[address]
+                    return self._instances[(address, admin, admin_pass)]
 
                 def _pop_oldest_node(self):
                     node_keys = list(self._instances)
                     node_key = next(iter(node_keys))
-                    LOG.debug("Removed oldest node %s from cache" % (node_key))
+                    LOG.debug("Removed oldest node {} from "
+                              "cache".format(node_key))
                     rnode = self._instances.pop(node_key, None)
                     if rnode:
                         del rnode
