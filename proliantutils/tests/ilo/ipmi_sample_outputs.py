@@ -28,7 +28,7 @@ NIC_FRU_OUT_TUPLE = ((
     "Product Name          : HP Ethernet 1Gb 4-port 331FLR Adapter\n"
     "Product Part Number   : 629135-B21\n"
     "Product Version       : 00\n"
-    "Product Serial        : CN84170RX5"), None)
+    "Product Serial        : CN84170RX5").encode('ascii'), None)
 
 NIC_FRU_OUT = (
     "Board Mfg Date        : Mon Apr 28 23:16:00 2014\n"
