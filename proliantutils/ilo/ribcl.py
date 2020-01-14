@@ -1109,6 +1109,10 @@ class RIBCLOperations(operations.IloOperations):
         LOG.debug(self._('Uploading firmware file: %s ...'), filename)
         cookie = fw_img_processor.upload_file_to((self.host, self.port),
                                                  self.timeout)
+        # NOTE(mgoddard): Some devices return a cookie with a newline. This
+        # breaks header validation in the requests library, which causes the
+        # update to fail.
+        cookie = cookie.strip()
         LOG.debug(self._('Uploading firmware file: %s ... done'), filename)
 
         root = self._get_firmware_update_xml_for_file_and_component(
