@@ -35,7 +35,8 @@ class HPEConnector(connector.Connector):
             lambda e: isinstance(e, exceptions.ConnectionError)),
         stop_max_attempt_number=MAX_RETRY_ATTEMPTS,
         wait_fixed=MAX_TIME_BEFORE_RETRY)
-    def _op(self, method, path='', data=None, headers=None):
+    def _op(self, method, path='', data=None, headers=None,
+            blocking=False, timeout=60):
         """Overrides the base method to support retrying the operation.
 
         :param method: The HTTP method to be used, e.g: GET, POST,
@@ -43,10 +44,13 @@ class HPEConnector(connector.Connector):
         :param path: The sub-URI path to the resource.
         :param data: Optional JSON data.
         :param headers: Optional dictionary of headers.
+        :param blocking: Whether to block for asynchronous operations.
+        :param timeout: Max time in seconds to wait for blocking async call.
         :returns: The response from the connector.Connector's _op method.
         """
-        resp = super(HPEConnector, self)._op(method, path, data,
-                                             headers, allow_redirects=False)
+        resp = super(HPEConnector, self)._op(method, path, data, headers,
+                                             blocking, timeout,
+                                             allow_redirects=False)
         # With IPv6, Gen10 server gives redirection response with new path with
         # a prefix of '/' so this check is required
         if resp.status_code == 308:

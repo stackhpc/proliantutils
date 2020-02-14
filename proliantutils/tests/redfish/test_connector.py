@@ -38,6 +38,7 @@ class HPEConnectorTestCase(testtools.TestCase):
         hpe_conn._op('GET', path='fake/path', data=None, headers=headers)
         conn_mock.assert_called_once_with(hpe_conn, 'GET', path='fake/path',
                                           data=None, headers=headers,
+                                          blocking=False, timeout=60,
                                           allow_redirects=False)
         self.assertEqual(1, conn_mock.call_count)
 
@@ -88,7 +89,8 @@ class HPEConnectorTestCase(testtools.TestCase):
         res = hpe_conn._op('GET', path='fake/path',
                            data=None, headers=headers)
         calls = [mock.call(hpe_conn, 'GET', path='fake/path', data=None,
-                           headers=headers, allow_redirects=False),
+                           headers=headers, blocking=False, timeout=60,
+                           allow_redirects=False),
                  mock.call(hpe_conn, 'GET', path='/new/path', data=None,
                            headers=headers)]
         conn_mock.assert_has_calls(calls)
