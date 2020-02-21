@@ -48,8 +48,10 @@ class HPEConnector(connector.Connector):
         :param timeout: Max time in seconds to wait for blocking async call.
         :returns: The response from the connector.Connector's _op method.
         """
-        resp = super(HPEConnector, self)._op(method, path, data, headers,
-                                             blocking, timeout,
+        resp = super(HPEConnector, self)._op(method, path, data=data,
+                                             headers=headers,
+                                             blocking=blocking,
+                                             timeout=timeout,
                                              allow_redirects=False)
         # With IPv6, Gen10 server gives redirection response with new path with
         # a prefix of '/' so this check is required
