@@ -818,7 +818,9 @@ class IloRibclTestCase(unittest.TestCase):
     def test_update_ilo_firmware(self, _parse_output_mock, _request_ilo_mock,
                                  os_mock, upload_file_to_mock):
         # | GIVEN |
-        upload_file_to_mock.return_value = 'hickory-dickory-dock'
+        # NOTE(mgoddard): Whitespace should be stripped from the cookie.
+        # https://launchpad.net/bugs/1859616.
+        upload_file_to_mock.return_value = ' hickory-dickory-dock'
         os_mock.path.getsize.return_value = 12345
         # | WHEN |
         self.ilo.update_firmware('raw_fw_file.bin', 'ilo')
