@@ -59,7 +59,10 @@ def _exec_ipmitool(driver_info, command):
                   {'out': out, 'err': err, 'code': process.returncode})
     except Exception:
         pass
-    return out
+    if out:
+        return out.decode()
+    else:
+        return out
 
 
 def get_ilo_version(ilo_fw_str):
