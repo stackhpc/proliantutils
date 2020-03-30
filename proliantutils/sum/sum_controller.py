@@ -48,7 +48,7 @@ EXIT_CODE_TO_STRING = {
     3: ("The smart component was not installed. Node is already "
         "up-to-date."),
     253: "The installation of the component failed."
-    }
+}
 
 
 def _execute_sum(sum_file_path, mount_point, components=None):
@@ -129,8 +129,8 @@ def _parse_sum_ouput(exit_code):
             with open(OUTPUT_FILES[0], 'r') as f:
                 output_data = f.read()
 
-            ret_data = output_data[(output_data.find('Deployed Components:') +
-                                    len('Deployed Components:')):
+            ret_data = output_data[(output_data.find('Deployed Components:')
+                                    + len('Deployed Components:')):
                                    output_data.find('Exit status:')]
 
             failed = 0

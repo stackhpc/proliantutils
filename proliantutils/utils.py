@@ -58,7 +58,7 @@ def process_firmware_image(compact_firmware_file, ilo_object):
     # to be on a http store, and hence requires the upload to happen for the
     # firmware file.
     to_upload = False
-    m = re.search('Gen(\d+)', ilo_object.model)
+    m = re.search(r"Gen(\d+)", ilo_object.model)
     if int(m.group(1)) > 8:
         to_upload = True
 
@@ -136,24 +136,24 @@ def verify_image_checksum(image_location, expected_checksum):
 
 
 def validate_href(image_href):
-        """Validate HTTP image reference.
+    """Validate HTTP image reference.
 
-        :param image_href: Image reference.
-        :raises: exception.ImageRefValidationFailed if HEAD request failed or
-            returned response code not equal to 200.
-        :returns: Response to HEAD request.
-        """
-        try:
-            response = requests.head(image_href)
-            if response.status_code != http_client.OK:
-                raise exception.ImageRefValidationFailed(
-                    image_href=image_href,
-                    reason=("Got HTTP code %s instead of 200 in response to "
-                            "HEAD request." % response.status_code))
-        except requests.RequestException as e:
-            raise exception.ImageRefValidationFailed(image_href=image_href,
-                                                     reason=e)
-        return response
+    :param image_href: Image reference.
+    :raises: exception.ImageRefValidationFailed if HEAD request failed or
+        returned response code not equal to 200.
+    :returns: Response to HEAD request.
+    """
+    try:
+        response = requests.head(image_href)
+        if response.status_code != http_client.OK:
+            raise exception.ImageRefValidationFailed(
+                image_href=image_href,
+                reason=("Got HTTP code %s instead of 200 in response to "
+                        "HEAD request." % response.status_code))
+    except requests.RequestException as e:
+        raise exception.ImageRefValidationFailed(image_href=image_href,
+                                                 reason=e)
+    return response
 
 
 def apply_bios_properties_filter(settings, filter_to_be_applied):

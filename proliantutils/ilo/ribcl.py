@@ -316,8 +316,8 @@ class RIBCLOperations(operations.IloOperations):
                                          "message: '%(message)s'"),
                                   {'message': msg})
                         raise exception.IloClientInternalError(msg, status)
-                if (status in exception.IloLoginFailError.statuses or
-                        msg in exception.IloLoginFailError.messages):
+                if (status in exception.IloLoginFailError.statuses
+                        or msg in exception.IloLoginFailError.messages):
                     LOG.debug(self._("Got invalid response with "
                                      "message: '%(message)s'"),
                               {'message': msg})

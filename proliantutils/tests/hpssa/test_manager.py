@@ -50,14 +50,14 @@ class ManagerTestCases(testtools.TestCase):
                                                  "type=logicaldrive",
                                                  "drives=%s" % ld2_drives,
                                                  "raid=5",
-                                                 "size=%d" % (100*1024),
+                                                 "size=%d" % (100 * 1024),
                                                  process_input='y')
         # Verify that we created the 50GB disk the last.
         controller_exec_cmd_mock.assert_called_with("create",
                                                     "type=logicaldrive",
                                                     "drives=%s" % ld1_drives,
                                                     "raid=1",
-                                                    "size=%d" % (50*1024),
+                                                    "size=%d" % (50 * 1024),
                                                     process_input='y')
 
         ld1_ret = [x for x in current_config['logical_disks']
@@ -148,14 +148,14 @@ class ManagerTestCases(testtools.TestCase):
                                                  "type=logicaldrive",
                                                  mock.ANY,
                                                  "raid=5",
-                                                 "size=%d" % (100*1024),
+                                                 "size=%d" % (100 * 1024),
                                                  process_input='y')
         # Verify that we created the 50GB disk the last.
         controller_exec_cmd_mock.assert_called_with("create",
                                                     "type=logicaldrive",
                                                     mock.ANY,
                                                     "raid=1",
-                                                    "size=%d" % (50*1024),
+                                                    "size=%d" % (50 * 1024),
                                                     process_input='y')
 
         ld1_ret = [x for x in current_config['logical_disks']
@@ -551,7 +551,8 @@ class ManagerTestCases(testtools.TestCase):
                 'Summary': ('Drives overwritten with zeros because '
                             'sanitize erase is not supported on the '
                             'controller.')
-                }}
+            }
+        }
 
         ret = manager.erase_devices()
         self.assertEqual(expt_ret, ret)

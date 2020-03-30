@@ -100,9 +100,9 @@ class VirtualMedia(virtual_media.VirtualMedia):
             "Oem": {
                 "Hpe": {
                     "BootOnNextServerReset": boot_on_next_reset
-                    }
                 }
             }
+        }
         self._conn.patch(self.path, data=data)
 
 

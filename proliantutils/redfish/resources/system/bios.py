@@ -191,8 +191,8 @@ class BIOSBootSettings(base.ResourceBase):
         preferred_boot_device = self.persistent_boot_config_order[0]
         for boot_source in self.boot_sources:
             if ((boot_source.get("StructuredBootString") is not None) and (
-                    preferred_boot_device ==
-                    boot_source.get("StructuredBootString"))):
+                    preferred_boot_device
+                    == boot_source.get("StructuredBootString"))):
                 boot_string = boot_source["BootString"]
                 break
         else:
@@ -221,8 +221,8 @@ class BIOSBootSettings(base.ResourceBase):
             raise exception.IloError(msg)
 
         for boot_source in boot_sources:
-            if (mac.upper() in boot_source['UEFIDevicePath'] and
-                    'iSCSI' in boot_source['UEFIDevicePath']):
+            if (mac.upper() in boot_source['UEFIDevicePath']
+                    and 'iSCSI' in boot_source['UEFIDevicePath']):
                 return boot_source['StructuredBootString']
         else:
             msg = ('MAC provided "%s" is Invalid' % mac)

@@ -236,14 +236,14 @@ class IloRibclTestCase(unittest.TestCase):
         self.assertRaises(
             exception.IloCommandNotSupportedError,
             self.ilo.get_http_boot_url
-            )
+        )
 
     def test_set_http_boot_url(self):
         self.assertRaises(
             exception.IloCommandNotSupportedError,
             self.ilo.set_http_boot_url,
             'http://10.10.1.30:8081/startup.nsh'
-            )
+        )
 
     @mock.patch.object(ribcl.RIBCLOperations, '_request_ilo')
     def test_reset_server(self, request_ilo_mock):
@@ -830,7 +830,7 @@ class IloRibclTestCase(unittest.TestCase):
 
         root_xml_string = constants.UPDATE_ILO_FIRMWARE_INPUT_XML % (
             self.ilo.password, self.ilo.login, 12345, 'raw_fw_file.bin')
-        root_xml_string = re.sub('\n\s*', '', root_xml_string)
+        root_xml_string = re.sub(r"\n\s*", '', root_xml_string)
 
         ((ribcl_obj, xml_elem), the_ext_header_dict) = (
             _request_ilo_mock.call_args)
@@ -864,7 +864,7 @@ class IloRibclTestCase(unittest.TestCase):
 
         root_xml_string = constants.UPDATE_NONILO_FIRMWARE_INPUT_XML % (
             self.ilo.password, self.ilo.login, 12345, 'raw_fw_file.bin')
-        root_xml_string = re.sub('\n\s*', '', root_xml_string)
+        root_xml_string = re.sub(r"\n\s*", '', root_xml_string)
 
         ((ribcl_obj, xml_elem), the_ext_header_dict) = (
             _request_ilo_mock.call_args)
@@ -1090,6 +1090,7 @@ class IloRibclTestCaseBeforeRisSupport(unittest.TestCase):
         self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
                                 'ProLiant DL380 G7',
                                 self.ilo.get_bios_settings_result)
+
 
 if __name__ == '__main__':
     unittest.main()

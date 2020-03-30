@@ -32,6 +32,7 @@ class MibBuilder(builder.MibBuilder):
     # cause permission problems when opening files at relative path
     defaultMiscMibs = ''
 
+
 cpq_mibs_path = os.path.dirname(os.path.abspath(__file__))
 cpq_mibs_path = os.path.join(cpq_mibs_path, "cpqdisk_mibs")
 mBuilder = MibBuilder()
@@ -145,12 +146,10 @@ def _parse_mibs(iLOIP, snmp_credentials):
                 raise exception.IloSNMPInvalidInputFailure(msg)
             else:
                 if errorStatus:
-                    msg = ('Parsing MIBs failed. %s at %s' % (
-                        errorStatus.prettyPrint(),
-                        errorIndex and varBinds[-1][int(errorIndex)-1]
-                        or '?'
-                        )
-                    )
+                    msg = ('Parsing MIBs failed. %s at %s'
+                           % (errorStatus.prettyPrint(),
+                              errorIndex and varBinds[-1][int(errorIndex) - 1]
+                              or '?'))
                     LOG.error(msg)
                     raise exception.IloSNMPInvalidInputFailure(msg)
                 else:
@@ -224,5 +223,5 @@ def get_local_gb(iLOIP, snmp_credentials):
         for key in disk_sizes[uuid]:
             if int(disk_sizes[uuid][key]) > max_size:
                 max_size = int(disk_sizes[uuid][key])
-    max_size_gb = max_size/1024
+    max_size_gb = max_size / 1024
     return max_size_gb

@@ -1175,7 +1175,6 @@ class HPESystemTestCase(testtools.TestCase):
             '12:44:6a:3b:04:11', '13:44:6a:3b:04:13']
         self.assertRaisesRegex(
             exception.InvalidInputError,
-            "Given macs: \['14:23:AD:3B:4C:78'\] "
-            "not found in the system",
+            r"Given macs: \['14:23:AD:3B:4C:78'\] not found in the system",
             self.sys_inst.validate_macs,
             ['12:44:6a:3b:04:11', '14:23:AD:3B:4C:78'])

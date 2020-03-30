@@ -239,14 +239,14 @@ def get_supported_boot_modes(supported_boot_mode_constant):
     """
     boot_mode_bios = 'false'
     boot_mode_uefi = 'false'
-    if (supported_boot_mode_constant ==
-            constants.SUPPORTED_BOOT_MODE_LEGACY_BIOS_ONLY):
+    if (supported_boot_mode_constant
+            == constants.SUPPORTED_BOOT_MODE_LEGACY_BIOS_ONLY):
         boot_mode_bios = 'true'
-    elif (supported_boot_mode_constant ==
-            constants.SUPPORTED_BOOT_MODE_UEFI_ONLY):
+    elif (supported_boot_mode_constant
+          == constants.SUPPORTED_BOOT_MODE_UEFI_ONLY):
         boot_mode_uefi = 'true'
-    elif (supported_boot_mode_constant ==
-            constants.SUPPORTED_BOOT_MODE_LEGACY_BIOS_AND_UEFI):
+    elif (supported_boot_mode_constant
+          == constants.SUPPORTED_BOOT_MODE_LEGACY_BIOS_AND_UEFI):
         boot_mode_bios = 'true'
         boot_mode_uefi = 'true'
 

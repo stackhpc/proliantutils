@@ -69,7 +69,7 @@ SUPPORTED_RIS_METHODS = [
     'set_vm_status',
     'update_firmware',
     'update_persistent_boot',
-    ]
+]
 
 SUPPORTED_REDFISH_METHODS = [
     'create_raid_configuration',

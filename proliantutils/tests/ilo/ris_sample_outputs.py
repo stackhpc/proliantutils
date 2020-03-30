@@ -18,7 +18,7 @@ MODULE = "RIS"
 
 HTTP_BOOT_URL = {
     "UefiShellStartupUrl": "http://10.10.1.30:8081/startup.nsh"
-    }
+}
 
 RESPONSE_BODY_FOR_REST_OP = """
 {
@@ -374,14 +374,12 @@ REST_GET_SECURE_BOOT = {
     "SecureBootCurrentState": False,
     "SecureBootEnable": True,
     "Type": "HpSecureBoot.0.9.5",
-    "links":
-        {
-            "self":
-                {
-                    "href": "/rest/v1/Systems/1/SecureBoot"
-                }
+    "links": {
+        "self": {
+            "href": "/rest/v1/Systems/1/SecureBoot"
         }
     }
+}
 
 REST_FAILURE_OUTPUT = {
     'Type': 'ExtendedError.1.0.0',

@@ -1340,7 +1340,7 @@ class RedfishOperationsTestCase(testtools.TestCase):
             exception.InvalidInputError(msg))
         self.assertRaisesRegex(
             exception.InvalidInputError,
-            "Given macs: \['12:44:6A:3B:04:15'\] not found in the system",
+            r"Given macs: \['12:44:6A:3B:04:15'\] not found in the system",
             self.rf_client._change_iscsi_target_settings, {},
             ['12:44:6A:3B:04:15'])
 

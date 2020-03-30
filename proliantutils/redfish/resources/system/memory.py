@@ -55,8 +55,8 @@ class MemoryCollection(base.ResourceCollectionBase):
             if mem.memory_type == sys_cons.MEMORY_TYPE_NVDIMM_N:
                 persistent_memory = True
                 nvdimm_n = True
-                if (mem.memory_device_type ==
-                        sys_cons.MEMORY_DEVICE_TYPE_LOGICAL):
+                if (mem.memory_device_type
+                        == sys_cons.MEMORY_DEVICE_TYPE_LOGICAL):
                     logical_nvdimm_n = True
                     break
 

@@ -49,10 +49,9 @@ class EthernetInterfaceCollection(base.ResourceCollectionBase):
         mac_dict = {}
         for eth in self.get_members():
             if eth.mac_address is not None:
-                if (eth.status is not None and
-                        eth.status.health == sys_cons.HEALTH_OK
-                        and eth.status.state ==
-                        sys_cons.HEALTH_STATE_ENABLED):
+                if (eth.status is not None
+                        and eth.status.health == sys_cons.HEALTH_OK
+                        and eth.status.state == sys_cons.HEALTH_STATE_ENABLED):
                     mac_dict.update(
                         {'Port ' + eth.identity: eth.mac_address})
         return mac_dict

@@ -113,8 +113,8 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
                     yield 200, None, item, memberuri
 
             # else walk the member links
-            elif ('links' in thecollection and
-                  'Member' in thecollection['links']):
+            elif ('links' in thecollection
+                  and 'Member' in thecollection['links']):
                 # iterate members
                 for memberuri in thecollection['links']['Member']:
                     # for each member return the resource indicated by the
@@ -123,8 +123,8 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
                     yield status, headers, member, memberuri['href']
 
             # page forward if there are more pages in the collection
-            if ('links' in thecollection and
-                    'NextPage' in thecollection['links']):
+            if ('links' in thecollection
+                    and 'NextPage' in thecollection['links']):
                 next_link_uri = (collection_uri + '?page=' + str(
                                  thecollection['links']['NextPage']['page']))
                 status, headers, thecollection = self._rest_get(next_link_uri)
@@ -159,8 +159,8 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         """
         messages = []
         if isinstance(extended_error, dict):
-            if ('Type' in extended_error and
-                    extended_error['Type'].startswith('ExtendedError.')):
+            if ('Type' in extended_error
+                    and extended_error['Type'].startswith('ExtendedError.')):
                 for msg in extended_error['Messages']:
                     message_id = msg['MessageID']
                     x = message_id.split('.')
@@ -176,12 +176,12 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
                         msg_str = message_id + ':  ' + msg_dict['Message']
 
                         for argn in range(0, msg_dict['NumberOfArgs']):
-                            subst = '%' + str(argn+1)
+                            subst = '%' + str(argn + 1)
                             m = str(msg['MessageArgs'][argn])
                             msg_str = msg_str.replace(subst, m)
 
-                        if ('Resolution' in msg_dict and
-                                msg_dict['Resolution'] != 'None'):
+                        if ('Resolution' in msg_dict
+                                and msg_dict['Resolution'] != 'None'):
                             msg_str += '  ' + msg_dict['Resolution']
 
                         messages.append(msg_str)
@@ -216,8 +216,8 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         """Check if the bios resource exists."""
 
         system = self._get_host_details()
-        if ('links' in system['Oem']['Hp'] and
-                'BIOS' in system['Oem']['Hp']['links']):
+        if ('links' in system['Oem']['Hp']
+                and 'BIOS' in system['Oem']['Hp']['links']):
             # Get the BIOS URI and Settings
             bios_uri = system['Oem']['Hp']['links']['BIOS']['href']
             status, headers, bios_settings = self._rest_get(bios_uri)
@@ -251,8 +251,8 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         """
 
         system = self._get_host_details()
-        if ('links' in system['Oem']['Hp'] and
-                'PCIDevices' in system['Oem']['Hp']['links']):
+        if ('links' in system['Oem']['Hp']
+                and 'PCIDevices' in system['Oem']['Hp']['links']):
             # Get the PCI URI and Settings
             pci_uri = system['Oem']['Hp']['links']['PCIDevices']['href']
             status, headers, pci_device_list = self._rest_get(pci_uri)
@@ -288,8 +288,8 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         :returns the tuple of SmartStorage URI, Headers and settings.
         """
         system = self._get_host_details()
-        if ('links' in system['Oem']['Hp'] and
-                'SmartStorage' in system['Oem']['Hp']['links']):
+        if ('links' in system['Oem']['Hp']
+                and 'SmartStorage' in system['Oem']['Hp']['links']):
             # Get the SmartStorage URI and Settings
             storage_uri = system['Oem']['Hp']['links']['SmartStorage']['href']
             status, headers, storage_settings = self._rest_get(storage_uri)
@@ -315,8 +315,8 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         # Do not raise exception if there is no ArrayControllers
         # as Storage can be zero at any point and if we raise
         # exception it might fail get_server_capabilities().
-        if ('links' in storage_settings and
-                'ArrayControllers' in storage_settings['links']):
+        if ('links' in storage_settings
+                and 'ArrayControllers' in storage_settings['links']):
             # Get the ArrayCOntrollers URI and Settings
             array_uri = storage_settings['links']['ArrayControllers']['href']
             status, headers, array_settings = self._rest_get(array_uri)
@@ -338,8 +338,8 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         # Do not raise exception if there is no ArrayControllers
         # as Storage can be zero at any point and if we raise
         # exception it might fail get_server_capabilities().
-        if ('links' in array_settings and
-                'Member' in array_settings['links']):
+        if ('links' in array_settings
+                and 'Member' in array_settings['links']):
             array_uri_links = array_settings['links']['Member']
         return array_uri_links
 
@@ -399,13 +399,13 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
             _, _, member_settings = (
                 self._rest_get(array_link['href']))
 
-            if ('links' in member_settings and
-                    drive_name in member_settings['links']):
+            if ('links' in member_settings
+                    and drive_name in member_settings['links']):
                 disk_uri = member_settings['links'][drive_name]['href']
                 headers, disk_member_uri, disk_mem = (
                     self._rest_get(disk_uri))
-                if ('links' in disk_mem and
-                        'Member' in disk_mem['links']):
+                if ('links' in disk_mem
+                        and 'Member' in disk_mem['links']):
                     for disk_link in disk_mem['links']['Member']:
                         diskdrive_uri = disk_link['href']
                         _, _, disk_details = (
@@ -471,9 +471,8 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
     def _validate_if_patch_supported(self, headers, uri):
         """Check if the PATCH Operation is allowed on the resource."""
         if not self._operation_allowed(headers, 'PATCH'):
-                msg = ('PATCH Operation not supported on the resource '
-                       '"%s"' % uri)
-                raise exception.IloError(msg)
+            msg = ('PATCH Operation not supported on the resource "%s"' % uri)
+            raise exception.IloError(msg)
 
     def _get_bios_setting(self, bios_property):
         """Retrieves bios settings of the server."""
@@ -712,8 +711,8 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         """Change secure boot settings on the server."""
         system = self._get_host_details()
         # find the BIOS URI
-        if ('links' not in system['Oem']['Hp'] or
-           'SecureBoot' not in system['Oem']['Hp']['links']):
+        if ('links' not in system['Oem']['Hp']
+                or 'SecureBoot' not in system['Oem']['Hp']['links']):
             msg = (' "SecureBoot" resource or feature is not '
                    'supported on this system')
             raise exception.IloCommandNotSupportedError(msg)
@@ -735,7 +734,7 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         # Change the bios setting as a workaround to enable secure boot
         # Can be removed when fixed for Gen9 snap2
         val = self._get_bios_setting('CustomPostMessage')
-        val = val.rstrip() if val.endswith(" ") else val+" "
+        val = val.rstrip() if val.endswith(" ") else val + " "
         self._change_bios_setting({'CustomPostMessage': val})
 
     def _is_boot_mode_uefi(self):
@@ -771,8 +770,8 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         """
         system = self._get_host_details()
 
-        if ('links' not in system['Oem']['Hp'] or
-           'SecureBoot' not in system['Oem']['Hp']['links']):
+        if ('links' not in system['Oem']['Hp']
+                or 'SecureBoot' not in system['Oem']['Hp']['links']):
             msg = ('"SecureBoot" resource or feature is not supported'
                    ' on this system')
             raise exception.IloCommandNotSupportedError(msg)
@@ -1134,8 +1133,8 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         """
         system = self._get_host_details()
         bios_uefi_class_val = 0  # value for bios_only boot mode
-        if ('Bios' in system['Oem']['Hp'] and
-                'UefiClass' in system['Oem']['Hp']['Bios']):
+        if ('Bios' in system['Oem']['Hp']
+                and 'UefiClass' in system['Oem']['Hp']['Bios']):
             bios_uefi_class_val = (system['Oem']['Hp']
                                          ['Bios']['UefiClass'])
         return mappings.GET_SUPPORTED_BOOT_MODE_RIS_MAP.get(
@@ -1361,7 +1360,7 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
             msg = self._get_extended_error(response)
             raise exception.IloError(msg)
 
-    def _get_vm_device_status(self,  device='FLOPPY'):
+    def _get_vm_device_status(self, device='FLOPPY'):
         """Returns the given virtual media device status and device URI
 
         :param  device: virtual media device to be queried
@@ -1375,14 +1374,14 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
 
         # Check if the input is valid
         if device not in valid_devices:
-                raise exception.IloInvalidInputError(
-                    "Invalid device. Valid devices: FLOPPY or CDROM.")
+            raise exception.IloInvalidInputError(
+                "Invalid device. Valid devices: FLOPPY or CDROM.")
 
         manager, uri = self._get_ilo_details()
         try:
             vmedia_uri = manager['links']['VirtualMedia']['href']
         except KeyError:
-            msg = ('"VirtualMedia" section in Manager/links does not exist')
+            msg = '"VirtualMedia" section in Manager/links does not exist'
             raise exception.IloCommandNotSupportedError(msg)
 
         for status, hds, vmed, memberuri in self._get_collection(vmedia_uri):
@@ -1447,8 +1446,8 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         response_data['DEVICE'] = device
 
         # FLOPPY cannot be a boot device
-        if ((response_data['BOOT_OPTION'] == 'BOOT_ONCE') and
-           (response_data['DEVICE'] == 'FLOPPY')):
+        if ((response_data['BOOT_OPTION'] == 'BOOT_ONCE')
+                and (response_data['DEVICE'] == 'FLOPPY')):
             response_data['BOOT_OPTION'] = 'NO_BOOT'
 
         return response_data
@@ -1623,9 +1622,9 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         if 'HP iLO Virtual USB CD' in boot_string:
             return 'CDROM'
 
-        elif ('NIC' in boot_string or
-              'PXE' in boot_string or
-              "iSCSI" in boot_string):
+        elif ('NIC' in boot_string
+              or 'PXE' in boot_string
+              or "iSCSI" in boot_string):
             return 'NETWORK'
 
         elif common.isDisk(boot_string):
@@ -1657,7 +1656,7 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
 
         systems_uri = "/rest/v1/Systems/1"
         # Need to set this option first if device is 'UefiTarget'
-        if new_device is 'UefiTarget':
+        if new_device == 'UefiTarget':
             system = self._get_host_details()
             uefi_devices = (
                 system['Boot']['UefiTargetBootSourceOverrideSupported'])

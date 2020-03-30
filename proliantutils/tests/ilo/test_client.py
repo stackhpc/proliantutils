@@ -135,7 +135,7 @@ class IloClientInitTestCase(testtools.TestCase):
         ribcl_obj_mock.get_product_name.return_value = 'product'
 
         c = client.IloClient.cls("1.2.3.4", "admin", "Admin",
-                                 timeout=120,  port=4430,
+                                 timeout=120, port=4430,
                                  bios_password='foo',
                                  cacert='/somewhere')
 
@@ -157,7 +157,7 @@ class IloClientInitTestCase(testtools.TestCase):
         ribcl_obj_mock.get_product_name.return_value = 'product'
 
         c = client.IloClient.cls("FE80::9AF2:B3FF:FEEE:F884%eth0", "admin",
-                                 "Admin", timeout=120,  port=4430,
+                                 "Admin", timeout=120, port=4430,
                                  bios_password='foo',
                                  cacert='/somewhere')
 
@@ -182,7 +182,7 @@ class IloClientInitTestCase(testtools.TestCase):
         ribcl_obj_mock.get_product_name.return_value = 'product'
 
         c = client.IloClient.cls("2001:0db8:85a3::8a2e:0370:7334", "admin",
-                                 "Admin", timeout=120,  port=4430,
+                                 "Admin", timeout=120, port=4430,
                                  bios_password='foo',
                                  cacert='/somewhere')
 
@@ -208,7 +208,7 @@ class IloClientInitTestCase(testtools.TestCase):
         ribcl_obj_mock.get_product_name.return_value = 'ProLiant DL180 Gen10'
 
         c = client.IloClient.cls("1.2.3.4", "admin", "Admin",
-                                 timeout=120,  port=4430,
+                                 timeout=120, port=4430,
                                  bios_password='foo',
                                  cacert='/somewhere')
 
@@ -235,7 +235,7 @@ class IloClientInitTestCase(testtools.TestCase):
             exception.IloError('RIBCL is disabled'))
 
         c = client.IloClient.cls("1.2.3.4", "admin", "Admin",
-                                 timeout=120,  port=4430,
+                                 timeout=120, port=4430,
                                  bios_password='foo',
                                  cacert='/somewhere')
 
@@ -258,7 +258,7 @@ class IloClientInitTestCase(testtools.TestCase):
             self, redfish_mock, ribcl_mock):
 
         c = client.IloClient.cls("1.2.3.4", "admin", "Admin",
-                                 timeout=120,  port=4430,
+                                 timeout=120, port=4430,
                                  bios_password='foo', cacert='/somewhere',
                                  use_redfish_only=True)
         ribcl_mock.assert_called_once_with(
@@ -290,7 +290,7 @@ class IloClientInitTestCase(testtools.TestCase):
                             'snmp_inspection': 'true'}
 
         c = client.IloClient.cls("1.2.3.4", "admin", "Admin",
-                                 timeout=120,  port=4430,
+                                 timeout=120, port=4430,
                                  bios_password='foo',
                                  cacert='/somewhere',
                                  snmp_credentials=snmp_credentials)
@@ -321,7 +321,7 @@ class IloClientInitTestCase(testtools.TestCase):
 
         self.assertRaises(exception.IloInvalidInputError, client.IloClient.cls,
                           "1.2.3.4", "admin", "Admin",
-                          timeout=120,  port=4430,
+                          timeout=120, port=4430,
                           bios_password='foo',
                           cacert='/somewhere',
                           snmp_credentials=snmp_credentials)
@@ -1411,8 +1411,8 @@ class IloRedfishClientTestCase(testtools.TestCase):
                     if redfish_method_name not in ('unset_iscsi_boot_info',
                                                    'set_iscsi_boot_info'):
                         self.assertTrue(eval(
-                            'self.redfish_mock.return_value.' +
-                            redfish_method_name).called)
+                            'self.redfish_mock.return_value.'
+                            + redfish_method_name).called)
                     validate_method_calls.no_test_cases += 1
                 except TypeError:
                     missed_ops.append(redfish_method_name)

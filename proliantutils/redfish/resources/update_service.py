@@ -55,7 +55,7 @@ class HPEUpdateService(base.ResourceBase):
                                       resource=self._path))
         return fw_update_action
 
-    def flash_firmware(self, redfish_inst,  file_url):
+    def flash_firmware(self, redfish_inst, file_url):
         """Perform firmware flashing on a redfish system
 
         :param file_url: url to firmware bits.

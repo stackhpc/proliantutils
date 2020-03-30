@@ -44,7 +44,7 @@ class SnmpTestCase(unittest.TestCase):
                           {'cpqDaPhyDrvSize': '286102'}}
         get_disk_mock.return_value = disk_snmp_data
         actual_size = snmp.get_local_gb(iLOIp, snmp_credentials)
-        expected_size = (572316/1024)
+        expected_size = (572316 / 1024)
         self.assertEqual(actual_size, expected_size)
         get_disk_mock.assert_called_once_with(iLOIp, snmp_credentials)
 

@@ -61,7 +61,7 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
             'Summary': ("The smart component was installed successfully."
                         " Status of updated components: Total: 2 Success: 2 "
                         "Failed: 0.")
-            }
+        }
 
         stdout = sum_controller._execute_sum("hpsum", "/tmp/hpsum",
                                              components=None)
@@ -103,7 +103,7 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
             'Summary': ("The installation of the component failed. Status "
                         "of updated components: Total: 2 Success: 1 "
                         "Failed: 1.")
-            }
+        }
         value = ("hpsum_service_x64 started successfully. Sending Shutdown "
                  "request to engine. Successfully shutdown the service.")
         execute_mock.side_effect = processutils.ProcessExecutionError(

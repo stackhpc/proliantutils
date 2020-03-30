@@ -76,7 +76,7 @@ def _get_dict(lines, start_index, indentation, deep):
 
         # Check for multi-level returns
         if current_line_indentation < indentation:
-            return info, i-1
+            return info, i - 1
 
         if current_line_indentation == indentation:
             current_item = current_line.lstrip(' ')
@@ -85,12 +85,13 @@ def _get_dict(lines, start_index, indentation, deep):
             continue
 
         if i < len(lines) - 1:
-            next_line_indentation = _get_indentation(lines[i+1])
+            next_line_indentation = _get_indentation(lines[i + 1])
         else:
             next_line_indentation = current_line_indentation
 
         if next_line_indentation > current_line_indentation:
-            ret_dict, i = _get_dict(lines, i, current_line_indentation, deep+1)
+            ret_dict, i = _get_dict(lines, i,
+                                    current_line_indentation, deep + 1)
             for key in ret_dict.keys():
                 if key in info[current_item]:
                     info[current_item][key].update(ret_dict[key])
@@ -554,7 +555,7 @@ class RaidArray(object):
 
         # TODO(rameshg87): This always returns in MB, but confirm with
         # HPSSA folks.
-        match = re.search('Max: (\d+)', stdout)
+        match = re.search(r"Max: (\d+)", stdout)
         if not match:
             return False
 
@@ -580,9 +581,8 @@ class LogicalDrive(object):
             # TODO(rameshg87): Reduce the disk size by 1 to make sure Ironic
             # has enough space to write a config drive. Remove this when
             # Ironic doesn't need it.
-            self.size_gb = int(strutils.string_to_bytes(size,
-                                                        return_int=True) /
-                               (1024*1024*1024)) - 1
+            self.size_gb = int(strutils.string_to_bytes(
+                size, return_int=True) / (1024 * 1024 * 1024)) - 1
         except KeyError:
             msg = ("Can't get 'Size' parameter from ssacli output for logical "
                    "disk '%(logical_disk)s' of RAID array '%(array)s' in "
@@ -649,9 +649,8 @@ class PhysicalDrive(object):
         # It requires space to be stripped.
         try:
             size = self.properties['Size'].replace(' ', '')
-            self.size_gb = int(strutils.string_to_bytes(size,
-                                                        return_int=True) /
-                               (1024*1024*1024))
+            self.size_gb = int(strutils.string_to_bytes(
+                size, return_int=True) / (1024 * 1024 * 1024))
         except KeyError:
             msg = ("Can't get 'Size' parameter from ssacli output for "
                    "physical disk '%(physical_disk)s' of controller "

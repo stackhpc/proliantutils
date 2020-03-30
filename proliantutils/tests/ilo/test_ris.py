@@ -76,7 +76,7 @@ class IloRisTestCase(testtools.TestCase):
         _uefi_boot_mode_mock.assert_called_once_with()
         self.assertEqual(
             'http://10.10.1.30:8081/startup.nsh', result['UefiShellStartupUrl']
-            )
+        )
 
     @mock.patch.object(ris.RISOperations, '_change_bios_setting')
     @mock.patch.object(ris.RISOperations, '_is_boot_mode_uefi')
@@ -87,7 +87,7 @@ class IloRisTestCase(testtools.TestCase):
         _uefi_boot_mode_mock.assert_called_once_with()
         change_bios_setting_mock.assert_called_once_with({
             "UefiShellStartupUrl": "http://10.10.1.30:8081/startup.nsh"
-            })
+        })
 
     @mock.patch.object(ris.RISOperations, '_is_boot_mode_uefi')
     def test_get_http_boot_url_bios(self, _uefi_boot_mode_mock):
@@ -1807,7 +1807,7 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
             '12:44:6a:3b:04:11', '13:44:6a:3b:04:13']
         self.assertRaisesRegex(
             exception.InvalidInputError,
-            "Given macs: \['12:44:6A:3B:04:15'\] not found in the system",
+            r"Given macs: \['12:44:6A:3B:04:15'\] not found in the system",
             self.client._validate_macs, ['12:44:6A:3B:04:15'])
 
     @mock.patch.object(ris.RISOperations, '_get_collection')
@@ -1883,7 +1883,7 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
         validate_macs_mock.side_effect = exception.InvalidInputError(msg)
         self.assertRaisesRegex(
             exception.InvalidInputError,
-            "Given macs: \['12:44:6A:3B:04:15'\] not found in the system",
+            r"Given macs: \['12:44:6A:3B:04:15'\] not found in the system",
             self.client._change_iscsi_settings, {}, ['12:44:6A:3B:04:15'])
 
     @mock.patch.object(ris.RISOperations, '_check_iscsi_rest_patch_allowed')

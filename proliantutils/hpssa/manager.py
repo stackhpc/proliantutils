@@ -67,8 +67,8 @@ def validate(raid_config):
         elif 'physical_disks' in logical_disk:
             no_of_disks_specified = len(logical_disk['physical_disks'])
 
-        if (no_of_disks_specified and
-                no_of_disks_specified < min_disks_reqd):
+        if (no_of_disks_specified
+                and no_of_disks_specified < min_disks_reqd):
             msg = ("RAID level %(raid_level)s requires at least %(number)s "
                    "disks." % {'raid_level': raid_level,
                                'number': min_disks_reqd})
@@ -145,8 +145,8 @@ def create_configuration(raid_config):
         sorted((x for x in raid_config['logical_disks']
                 if x['size_gb'] != "MAX"),
                reverse=True,
-               key=lambda x: x['size_gb']) +
-        [x for x in raid_config['logical_disks'] if x['size_gb'] == "MAX"])
+               key=lambda x: x['size_gb'])
+        + [x for x in raid_config['logical_disks'] if x['size_gb'] == "MAX"])
 
     if any(logical_disk['share_physical_disks']
             for logical_disk in logical_disks_sorted
@@ -235,8 +235,8 @@ def _sort_shared_logical_disks(logical_disks):
     disks.
     :returns: the logical disks sorted based the above conditions.
     """
-    is_shared = (lambda x: True if ('share_physical_disks' in x and
-                                    x['share_physical_disks']) else False)
+    is_shared = (lambda x: True if ('share_physical_disks' in x
+                                    and x['share_physical_disks']) else False)
     num_of_disks = (lambda x: x['number_of_physical_disks']
                     if 'number_of_physical_disks' in x else
                     constants.RAID_LEVEL_MIN_DISKS[x['raid_level']])
@@ -291,9 +291,9 @@ def _sort_shared_logical_disks(logical_disks):
     # first, followed by shared logical disks with RAID 1, and finally by the
     # shared logical disks sorted based on number of disks and RAID 1+0
     # condition.
-    logical_disks_sorted = (logical_disks_nonshared +
-                            logical_disks_shared_raid1 +
-                            logical_disks_shared)
+    logical_disks_sorted = (logical_disks_nonshared
+                            + logical_disks_shared_raid1
+                            + logical_disks_shared)
     return logical_disks_sorted
 
 

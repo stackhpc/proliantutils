@@ -96,8 +96,8 @@ class Storage(base.ResourceBase):
     def has_nvme_ssd(self):
         """Return True if the drive is SSD and protocol is NVMe"""
         for member in self._drives_list():
-            if (member.media_type == constants.MEDIA_TYPE_SSD and
-                    member.protocol == constants.PROTOCOL_NVMe):
+            if (member.media_type == constants.MEDIA_TYPE_SSD
+                    and member.protocol == constants.PROTOCOL_NVMe):
                 return True
         return False
 

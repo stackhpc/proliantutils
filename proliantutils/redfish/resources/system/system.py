@@ -315,7 +315,7 @@ class HPESystem(system.System):
             try:
                 ssc_obj = self.get_smart_storage_config(config_id)
                 ssc_obj.delete_raid()
-            except exception.IloLogicalDriveNotFoundError as e:
+            except exception.IloLogicalDriveNotFoundError:
                 ld_exc_count += 1
             except sushy.exceptions.SushyError as e:
                 any_exceptions.append((config_id, str(e)))
@@ -534,7 +534,7 @@ class HPESystem(system.System):
                 if ssc_obj:
                     result = ssc_obj.read_raid(controller=controller)
                     config['logical_disks'].extend(result['logical_disks'])
-            except exception.IloLogicalDriveNotFoundError as e:
+            except exception.IloLogicalDriveNotFoundError:
                 ld_exc_count += 1
             except sushy.exceptions.SushyError as e:
                 any_exceptions.append((controller, str(e)))

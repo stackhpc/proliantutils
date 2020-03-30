@@ -338,9 +338,9 @@ def setup_fixture_create_fw_file_extracts_for(format):
         fw_files_dir = temp_dir
     elif format == 'rpm':
         fw_files_dir = os.path.join(
-            temp_dir +
-            '/please_remove_rpm_file_extracts/usr/lib/i386-linux-gnu/' +
-            'hp-firmware-iloX-xxxx'
+            temp_dir
+            + '/please_remove_rpm_file_extracts/usr/lib/i386-linux-gnu/'
+            + 'hp-firmware-iloX-xxxx'
         )
     else:
         fw_files_dir = temp_dir

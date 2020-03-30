@@ -696,7 +696,7 @@ class RedfishOperations(operations.IloOperations):
                  common_storage.has_rotational(sushy_system)),
                 ('has_nvme_ssd',
                  common_storage.has_nvme_ssd(sushy_system))
-                ]
+            ]
 
             all_key_to_value_expression_tuples += (
                 [('logical_raid_level_' + x, True)

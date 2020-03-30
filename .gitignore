@@ -38,6 +38,7 @@ htmlcov/
 nosetests.xml
 coverage.xml
 .testrepository/
+.stestr
 
 # Translations
 *.mo

@@ -96,8 +96,8 @@ def allocate_disks(logical_disk, server, raid_config):
     if share_physical_disks:
         sharable_disk_wwns = []
         for sharable_logical_disk in raid_config['logical_disks']:
-            if (sharable_logical_disk.get('share_physical_disks', False) and
-                    'root_device_hint' in sharable_logical_disk):
+            if (sharable_logical_disk.get('share_physical_disks', False)
+                    and 'root_device_hint' in sharable_logical_disk):
                 wwn = sharable_logical_disk['root_device_hint']['wwn']
                 sharable_disk_wwns.append(wwn)
 

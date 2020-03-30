@@ -135,24 +135,24 @@ class FirmwareImageUploader(FirmwareImageControllerBase):
 
         firmware = open(filename, 'rb').read()
         # generate boundary
-        boundary = b('------hpiLO3t' +
-                     str(random.randint(100000, 1000000)) + 'z')
+        boundary = b('------hpiLO3t'
+                     + str(random.randint(100000, 1000000)) + 'z')
 
         while boundary in firmware:
-            boundary = b('------hpiLO3t' +
-                         str(random.randint(100000, 1000000)) + 'z')
+            boundary = b('------hpiLO3t'
+                         + str(random.randint(100000, 1000000)) + 'z')
         # generate body parts
         parts = [
             # body1
-            b("--") + boundary +
-            b("""\r\nContent-Disposition: form-data; """
-              """name="fileType"\r\n\r\n"""),
+            b("--") + boundary
+            + b("""\r\nContent-Disposition: form-data; """
+                """name="fileType"\r\n\r\n"""),
             # body2
-            b("\r\n--") + boundary +
-            b('''\r\nContent-Disposition: form-data; name="fwimgfile"; '''
-              '''filename="''') +
-            b(filename) +
-            b('''"\r\nContent-Type: application/octet-stream\r\n\r\n'''),
+            b("\r\n--") + boundary
+            + b('''\r\nContent-Disposition: form-data; name="fwimgfile"; '''
+                '''filename="''')
+            + b(filename)
+            + b('''"\r\nContent-Type: application/octet-stream\r\n\r\n'''),
             # firmware image
             firmware,
             # body3
@@ -234,8 +234,8 @@ class FirmwareImageUploader(FirmwareImageControllerBase):
             return ssl.wrap_socket(sock, ssl_version=sslversion)
         except socket.sslerror:
             e = sys.exc_info()[1]
-            msg = (getattr(e, 'reason', None) or
-                   getattr(e, 'message', None))
+            msg = (getattr(e, 'reason', None)
+                   or getattr(e, 'message', None))
             # Some older iLO s don't support TLSv1, retry with SSLv3
             if ('wrong version number' in msg) and (
                     sslversion == ssl.PROTOCOL_TLSv1):
@@ -411,8 +411,8 @@ def _get_firmware_file_in_new_path(searching_path):
     file_name, file_ext_with_dot = common.get_filename_and_extension_of(
         firmware_file_path)
     new_firmware_file_path = os.path.join(
-        tempfile.gettempdir(), str(uuid.uuid4()) + '_' +
-        file_name + file_ext_with_dot)
+        tempfile.gettempdir(), str(uuid.uuid4())
+        + '_' + file_name + file_ext_with_dot)
 
     # create a hard link to the raw firmware file
     os.link(firmware_file_path, new_firmware_file_path)
