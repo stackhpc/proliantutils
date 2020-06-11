@@ -23,6 +23,7 @@ from proliantutils import exception
 from proliantutils.redfish.resources.system import bios
 from proliantutils.redfish.resources.system import constants as sys_cons
 from proliantutils.redfish.resources.system import iscsi
+from proliantutils.redfish.resources.system import tls_config
 
 
 class BIOSSettingsTestCase(testtools.TestCase):
@@ -109,6 +110,22 @@ class BIOSSettingsTestCase(testtools.TestCase):
         self.conn.get.return_value.json.reset_mock()
         self.assertIs(actual_settings,
                       self.bios_inst.iscsi_resource)
+        self.conn.get.return_value.json.assert_not_called()
+
+    def test_tls_config(self):
+        self.conn.get.return_value.json.reset_mock()
+        with open('proliantutils/tests/redfish/'
+                  'json_samples/tls_config.json', 'r') as f:
+            self.conn.get.return_value.json.return_value = (
+                json.loads(f.read()))
+        actual_settings = self.bios_inst.tls_config
+        self.assertIsInstance(actual_settings,
+                              tls_config.TLSConfig)
+        self.conn.get.return_value.json.assert_called_once_with()
+        # reset mock
+        self.conn.get.return_value.json.reset_mock()
+        self.assertIs(actual_settings,
+                      self.bios_inst.tls_config)
         self.conn.get.return_value.json.assert_not_called()
 
     def test__get_base_configs(self):

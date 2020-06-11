@@ -21,6 +21,7 @@ from proliantutils import log
 from proliantutils.redfish.resources.system import constants as sys_cons
 from proliantutils.redfish.resources.system import iscsi
 from proliantutils.redfish.resources.system import mappings
+from proliantutils.redfish.resources.system import tls_config
 from proliantutils.redfish import utils
 
 LOG = log.get_logger(__name__)
@@ -92,6 +93,19 @@ class BIOSSettings(base.ResourceBase):
         return iscsi.ISCSIResource(
             self._conn, utils.get_subresource_path_by(
                 self, ["Oem", "Hpe", "Links", "iScsi"]),
+            redfish_version=self.redfish_version)
+
+    @property
+    @sushy_utils.cache_it
+    def tls_config(self):
+        """Property to provide reference to BIOS TLS configuration instance
+
+        It is calculated once when the first time it is queried. On refresh,
+        this property gets reset.
+        """
+        return tls_config.TLSConfig(
+            self._conn, utils.get_subresource_path_by(
+                self, ["Oem", "Hpe", "Links", "TlsConfig"]),
             redfish_version=self.redfish_version)
 
     @property

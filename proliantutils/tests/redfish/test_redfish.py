@@ -2008,3 +2008,99 @@ class RedfishOperationsTestCase(testtools.TestCase):
             exception.IloError,
             'Could not set HTTPS URL on the iLO.',
             self.rf_client.set_http_boot_url, url, dhcp_enabled)
+
+    @mock.patch.object(redfish.RedfishOperations, '_is_boot_mode_uefi')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_add_tls_certificate_bios(self, get_sushy_system_mock,
+                                      _uefi_boot_mode_mock):
+        _uefi_boot_mode_mock.return_value = False
+        data = {
+            "NewCertificates": [
+                {
+                    "X509Certificate": "Some data"
+                }
+            ]
+        }
+
+        self.assertRaisesRegex(
+            exception.IloCommandNotSupportedInBiosError,
+            'TLS certificate cannot be upload in BIOS boot mode',
+            self.rf_client.add_tls_certificate,
+            data)
+
+    @mock.patch.object(redfish.RedfishOperations, '_is_boot_mode_uefi')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_add_tls_certificate(self, get_sushy_system_mock,
+                                 _uefi_boot_mode_mock):
+        _uefi_boot_mode_mock.return_value = True
+        cert_file = 'proliantutils/tests/redfish/json_samples/certfile.crt'
+        with open('proliantutils/tests/redfish/'
+                  'json_samples/certfile.crt', 'r') as f:
+            cert_data = f.read()
+
+        import re
+        cert_data = cert_data.rstrip()
+        ref_data = re.sub(r"\n", "\r\n", cert_data)
+
+        data = {
+            "NewCertificates": [
+                {
+                    "X509Certificate": ref_data
+                }
+            ]
+        }
+        self.rf_client.add_tls_certificate([cert_file])
+
+        (get_sushy_system_mock.return_value.
+         bios_settings.tls_config.tls_config_settings.
+         add_tls_certificate.assert_called_once_with(data))
+
+    @mock.patch.object(redfish.RedfishOperations, '_is_boot_mode_uefi')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_add_tls_certificate_raises_ilo_error(self, get_sushy_system_mock,
+                                                  _uefi_boot_mode_mock):
+        _uefi_boot_mode_mock.return_value = True
+        cert_file = 'proliantutils/tests/redfish/json_samples/certfile.crt'
+        (get_sushy_system_mock.return_value.
+         bios_settings.tls_config.tls_config_settings.
+         add_tls_certificate.side_effect) = (
+             sushy.exceptions.SushyError)
+
+        self.assertRaisesRegex(
+            exception.IloError,
+            'The Redfish controller has failed to upload TLS certificate.',
+            self.rf_client.add_tls_certificate, [cert_file])
+
+    @mock.patch.object(redfish.RedfishOperations, '_is_boot_mode_uefi')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_remove_tls_certificate(self, get_sushy_system_mock,
+                                    _uefi_boot_mode_mock):
+        _uefi_boot_mode_mock.return_value = True
+        fp = ('FA:3A:68:C7:7E:ED:90:21:D2:FA:3E:54:6B:0C:14:D3:'
+              '2F:8D:43:50:F7:05:A7:0F:1C:68:35:DB:5C:D2:53:28')
+
+        cert = {}
+        del_cert_list = []
+        cert_fp = {
+            "FingerPrint": fp
+        }
+        del_cert_list.append(cert_fp)
+        cert.update({"DeleteCertificates": del_cert_list})
+        self.rf_client.remove_tls_certificate([fp])
+
+        (get_sushy_system_mock.return_value.
+         bios_settings.tls_config.tls_config_settings.
+         remove_tls_certificate.assert_called_once_with(cert))
+
+    @mock.patch.object(redfish.RedfishOperations, '_is_boot_mode_uefi')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_remove_tls_certificate_bios(self, get_sushy_system_mock,
+                                         _uefi_boot_mode_mock):
+        _uefi_boot_mode_mock.return_value = False
+        fp = ('FA:3A:68:C7:7E:ED:90:21:D2:FA:3E:54:6B:0C:14:D3:'
+              '2F:8D:43:50:F7:05:A7:0F:1C:68:35:DB:5C:D2:53:28')
+
+        self.assertRaisesRegex(
+            exception.IloCommandNotSupportedInBiosError,
+            'TLS certificate cannot be removed in BIOS boot mode',
+            self.rf_client.remove_tls_certificate, fp)

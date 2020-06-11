@@ -15,6 +15,7 @@
 __author__ = 'HPE'
 
 import json
+import re
 
 from six.moves.urllib import parse
 import sushy
@@ -1327,3 +1328,72 @@ class RedfishOperations(operations.IloOperations):
                    {'error': str(e)})
             LOG.debug(msg)
             raise exception.IloError(msg)
+
+    def add_tls_certificate(self, cert_file_list):
+        """Adds the TLS certificates to the iLO.
+
+        :param cert_file_list: List of TLS certificate files
+
+        :raises: IloError, on an error from iLO.
+        :raises: IloCommandNotSupportedError, if the command is
+                 not supported on the server.
+        """
+        sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
+        if(self._is_boot_mode_uefi()):
+            cert_list = []
+            for cert_file in cert_file_list:
+                with open(cert_file, 'r') as f:
+                    data = json.dumps(f.read())
+                p = re.sub(r"\"", "", data)
+                q = re.sub(r"\\n", "\r\n", p)
+                r = q.rstrip()
+                cert = {}
+                cert['X509Certificate'] = r
+                cert_list.append(cert)
+
+            cert_dict = {}
+            cert_dict['NewCertificates'] = cert_list
+            try:
+                (sushy_system.bios_settings.tls_config.
+                 tls_config_settings.add_tls_certificate(cert_dict))
+            except sushy.exceptions.SushyError as e:
+                msg = (self._("The Redfish controller has failed to upload "
+                              "TLS certificate. Error %(error)s") %
+                       {'error': str(e)})
+                LOG.debug(msg)
+                raise exception.IloError(msg)
+        else:
+            msg = 'TLS certificate cannot be upload in BIOS boot mode'
+            raise exception.IloCommandNotSupportedInBiosError(msg)
+
+    def remove_tls_certificate(self, fp_list):
+        """Removes the TLS certificate from the iLO.
+
+        :param fp_list: List of finger prints of the TLS certificates
+
+        :raises: IloError, on an error from iLO.
+        :raises: IloCommandNotSupportedError, if the command is
+                 not supported on the server.
+        """
+        sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
+        if(self._is_boot_mode_uefi()):
+            cert = {}
+            del_cert_list = []
+            for fp in fp_list:
+                cert_fp = {
+                    "FingerPrint": fp
+                }
+                del_cert_list.append(cert_fp)
+            cert.update({"DeleteCertificates": del_cert_list})
+            try:
+                (sushy_system.bios_settings.tls_config.
+                 tls_config_settings.remove_tls_certificate(cert))
+            except sushy.exceptions.SushyError as e:
+                msg = (self._("The Redfish controller has failed to remove "
+                              "TLS certificate. Error %(error)s") %
+                       {'error': str(e)})
+                LOG.debug(msg)
+                raise exception.IloError(msg)
+        else:
+            msg = 'TLS certificate cannot be removed in BIOS boot mode'
+            raise exception.IloCommandNotSupportedInBiosError(msg)

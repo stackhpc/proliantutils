@@ -1,0 +1,66 @@
+
+
+    {
+        "@Redfish.Settings":
+        {
+            "@odata.type": "#Settings.v1_0_0.Settings",
+            "ETag": "C6239FAE",
+            "Messages":
+            [
+                {
+                    "MessageId": "Base.1.0.Success"
+                }
+            ],
+            "SettingsObject":
+            {
+                "@odata.id": "/redfish/v1/systems/1/bios/tlsconfig/settings/"
+            },
+            "Time": "2020-06-11T21:20:31+00:00"
+        },
+        "@odata.context": "/redfish/v1/$metadata#HpeTlsConfig.HpeTlsConfig",
+        "@odata.etag": "W/\"885481367F69969696DE63CCE9D97509\"",
+        "@odata.id": "/redfish/v1/systems/1/bios/tlsconfig/",
+        "@odata.type": "#HpeTlsConfig.v1_0_0.HpeTlsConfig",
+        "Certificates":
+        [
+            {
+                "FingerPrint": "FA:3A:68:C7:7E:ED:90:21:D2:FA:3E:54:6B:0C:14:D3:2F:8D:43:50:F7:05:A7:0F:1C:68:35:DB:5C:D2:53:28",
+                "Issuer": "C=IN, ST=Karnataka, L=Bengaluru, O=HPE, OU=BCOS, CN=Vinay Muddu, emailAddress=vinay.m.kumar@hpe.com",
+                "SerialNumber": "92DF813625F950E5",
+                "Subject": "C=IN, ST=Karnataka, L=Bengaluru, O=HPE, OU=BCOS, CN=Vinay Muddu, emailAddress=vinay.m.kumar@hpe.com",
+                "ValidNotAfter": "06/08/2021  06:40",
+                "ValidNotBefore": "06/08/2020  06:40"
+            }
+        ],
+        "Ciphers": "AES128-SHA:AES256-SHA:AES128-SHA256:AES256-SHA256:AES128-GCM-SHA256:AES256-GCM-SHA384",
+        "DeleteCertificates":
+        [
+        ],
+        "HostnameCheck": "Disabled",
+        "Id": "tlsconfig",
+        "Name": "TLS Current Settings",
+        "NewCertificates":
+        [
+        ],
+        "Oem":
+        {
+            "Hpe":
+            {
+                "@odata.type": "#HpeBiosExt.v2_0_0.HpeBiosExt",
+                "Links":
+                {
+                    "BaseConfigs":
+                    {
+                        "@odata.id": "/redfish/v1/systems/1/bios/tlsconfig/baseconfigs/"
+                    }
+                },
+                "SettingsObject":
+                {
+                    "UnmodifiedETag": "W/\"89BE572CAA977F7F7FE56E1ADBF4F043\""
+                }
+            }
+        },
+        "ProtocolVersion": "AUTO",
+        "TlsCaCertificateCount": 1,
+        "VerifyMode": "PEER"
+    }

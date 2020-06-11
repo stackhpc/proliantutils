@@ -121,7 +121,9 @@ SUPPORTED_REDFISH_METHODS = [
     'get_iscsi_initiator_info',
     'set_iscsi_initiator_info',
     'set_http_boot_url',
-    'get_http_boot_url'
+    'get_http_boot_url',
+    'add_tls_certificate',
+    'remove_tls_certificate'
 ]
 
 LOG = log.get_logger(__name__)
@@ -879,3 +881,17 @@ class IloClient(operations.IloOperations):
         :raises: IloError, on an error from iLO.
         """
         return self._call_method('get_available_disk_types')
+
+    def add_tls_certificate(self, cert_file_list):
+        """Adds the TLS certificate to the iLO
+
+        :raises: IloError, on an error from iLO.
+        """
+        return self._call_method('add_tls_certificate', cert_file_list)
+
+    def remove_tls_certificate(self, fp_list):
+        """Removes the TLS certificate from the iLO
+
+        :raises: IloError, on an error from iLO.
+        """
+        return self._call_method('remove_tls_certificate', fp_list)

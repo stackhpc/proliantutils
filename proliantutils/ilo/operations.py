@@ -533,3 +533,23 @@ class IloOperations(object):
                  not supported on the server.
         """
         raise exception.IloCommandNotSupportedError(ERRMSG)
+
+    def add_tls_certificate(self, cert_file_list):
+        """Adds the TLS certificate to the iLO
+
+        :param cert_file_list: List of TLS certificate files
+        :raises: IloError, on an error from iLO.
+        :raises: IloCommandNotSupportedError, if the command is
+                 not supported on the server.
+        """
+        raise exception.IloCommandNotSupportedError(ERRMSG)
+
+    def remove_tls_certificate(self, fp_list):
+        """Removes the TLS certificate from the iLO
+
+        :param fp_list: List of finger prints of the certificates
+        :raises: IloError, on an error from iLO.
+        :raises: IloCommandNotSupportedError, if the command is
+                 not supported on the server.
+        """
+        raise exception.IloCommandNotSupportedError(ERRMSG)
