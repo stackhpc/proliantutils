@@ -688,6 +688,8 @@ class RedfishOperationsTestCase(testtools.TestCase):
             'The Redfish controller failed to get the supported boot modes.',
             self.rf_client.get_supported_boot_mode)
 
+    @mock.patch.object(redfish.RedfishOperations,
+                       '_parse_security_dashboard_values_for_capabilities')
     @mock.patch.object(common_storage, 'get_drive_rotational_speed_rpm')
     @mock.patch.object(common_storage, 'has_nvme_ssd')
     @mock.patch.object(common_storage, 'has_rotational')
@@ -696,7 +698,7 @@ class RedfishOperationsTestCase(testtools.TestCase):
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
     def test_get_server_capabilities(self, get_manager_mock, get_system_mock,
                                      ssd_mock, rotational_mock,
-                                     nvme_mock, speed_mock):
+                                     nvme_mock, speed_mock, sec_mock):
         type(get_system_mock.return_value.pci_devices).gpu_devices = (
             [mock.MagicMock(spec=pci_device.PCIDevice)])
         type(get_system_mock.return_value.bios_settings).sriov = (
@@ -740,6 +742,9 @@ class RedfishOperationsTestCase(testtools.TestCase):
         type(get_system_mock.return_value.
              smart_storage).logical_raid_levels = (raid_mock)
         speed_mock.return_value = set(['10000', '15000'])
+        sec_mock.return_value = {'overall_security_status': 'Risk',
+                                 'security_override_switch': 'Ok',
+                                 'last_firmware_scan_result': 'Ok'}
         actual = self.rf_client.get_server_capabilities()
         expected = {'pci_gpu_devices': 1, 'sriov_enabled': 'true',
                     'secure_boot': 'true', 'cpu_vt': 'true',
@@ -760,9 +765,14 @@ class RedfishOperationsTestCase(testtools.TestCase):
                     'logical_raid_level_0': 'true',
                     'logical_raid_level_1': 'true',
                     'drive_rotational_10000_rpm': 'true',
-                    'drive_rotational_15000_rpm': 'true'}
+                    'drive_rotational_15000_rpm': 'true',
+                    'overall_security_status': 'Risk',
+                    'security_override_switch': 'Ok',
+                    'last_firmware_scan_result': 'Ok'}
         self.assertEqual(expected, actual)
 
+    @mock.patch.object(redfish.RedfishOperations,
+                       '_parse_security_dashboard_values_for_capabilities')
     @mock.patch.object(common_storage, 'get_drive_rotational_speed_rpm')
     @mock.patch.object(common_storage, 'has_nvme_ssd')
     @mock.patch.object(common_storage, 'has_rotational')
@@ -771,7 +781,7 @@ class RedfishOperationsTestCase(testtools.TestCase):
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
     def test_get_server_capabilities_optional_capabilities_absent(
             self, get_manager_mock, get_system_mock, ssd_mock,
-            rotational_mock, nvme_mock, speed_mock):
+            rotational_mock, nvme_mock, speed_mock, sec_mock):
         type(get_system_mock.return_value.pci_devices).gpu_devices = (
             [mock.MagicMock(spec=pci_device.PCIDevice)])
         type(get_system_mock.return_value.bios_settings).sriov = (
@@ -816,13 +826,19 @@ class RedfishOperationsTestCase(testtools.TestCase):
         type(get_system_mock.return_value.
              smart_storage).logical_raid_levels = (raid_mock)
         speed_mock.return_value = set()
+        sec_mock.return_value = {'overall_security_status': 'Risk',
+                                 'security_override_switch': 'Ok',
+                                 'last_firmware_scan_result': 'Ok'}
         actual = self.rf_client.get_server_capabilities()
         expected = {'pci_gpu_devices': 1,
                     'rom_firmware_version': 'U31 v1.00 (03/11/2017)',
                     'ilo_firmware_version': 'iLO 5 v1.15',
                     'nic_capacity': '1Gb',
                     'server_model': 'ProLiant DL180 Gen10',
-                    'boot_mode_bios': 'false', 'boot_mode_uefi': 'true'}
+                    'boot_mode_bios': 'false', 'boot_mode_uefi': 'true',
+                    'overall_security_status': 'Risk',
+                    'security_override_switch': 'Ok',
+                    'last_firmware_scan_result': 'Ok'}
         self.assertEqual(expected, actual)
 
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
@@ -2104,3 +2120,64 @@ class RedfishOperationsTestCase(testtools.TestCase):
             exception.IloCommandNotSupportedInBiosError,
             'TLS certificate cannot be removed in BIOS boot mode',
             self.rf_client.remove_tls_certificate, fp)
+
+    @mock.patch.object(redfish.RedfishOperations,
+                       '_get_security_dashboard_values')
+    def test__parse_security_dashboard_values_for_capabilities(self, sec_mock):
+        desc1 = ('The Require Login for iLO RBSU setting is disabled. '
+                 'This configuration allows unauthenticated iLO access '
+                 'through the UEFI System Utilities.')
+        act1 = ('Enable the Require Login for iLO RBSU setting.')
+        desc2 = ('The Password Complexity setting is disabled. This '
+                 'configuration increases system vulnerability to attack.')
+        act2 = ('Enable the "Password Complexity" setting.')
+        desc3 = ('The UEFI Secure Boot setting is disabled. In this '
+                 'configuration, the UEFI system firmware does not '
+                 'validate the boot loader, Option ROM firmware, and '
+                 'other system software executables for trusted signatures. '
+                 'This configuration breaks the chain of trust established by '
+                 'iLO from power-on')
+        act3 = ('Enable the Secure Boot setting in the UEFI System Utilities.')
+        s = {'server_configuration_lock_status': 'Disabled',
+             'overall_security_status': 'Risk',
+             'security_parameters':
+             {'Require Host Authentication': {'ignore': False,
+                                              'security_status': 'Ok',
+                                              'state': 'Disabled'},
+              'Last Firmware Scan Result': {'ignore': False,
+                                            'security_status': 'Ok',
+                                            'state': 'Ok'},
+              'Require Login for iLO RBSU': {'ignore': False,
+                                             'security_status': 'Risk',
+                                             'description': desc1,
+                                             'state': 'Disabled',
+                                             'recommended_action': act1},
+              'Authentication Failure Logging': {'ignore': False,
+                                                 'security_status': 'Ok',
+                                                 'state': 'Enabled'},
+              'Password Complexity': {'ignore': False,
+                                      'security_status': 'Risk',
+                                      'description': desc2,
+                                      'state': 'Disabled',
+                                      'recommended_action': act2},
+              'IPMI/DCMI Over LAN': {'ignore': False,
+                                     'security_status': 'Ok',
+                                     'state': 'Disabled'},
+              'Security Override Switch': {'ignore': False,
+                                           'security_status': 'Ok',
+                                           'state': 'Off'},
+              'Minimum Password Length': {'ignore': False,
+                                          'security_status': 'Ok',
+                                          'state': 'Ok'},
+              'Secure Boot': {'ignore': False,
+                              'security_status': 'Risk',
+                              'description': desc3,
+                              'state': 'Disabled',
+                              'recommended_action': act3}}}
+        sec_mock.return_value = s
+        expected = {'last_firmware_scan_result': 'Ok',
+                    'overall_security_status': 'Risk',
+                    'security_override_switch': 'Ok'}
+        actual = (
+            self.rf_client._parse_security_dashboard_values_for_capabilities())
+        self.assertEqual(expected, actual)

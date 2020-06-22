@@ -17,6 +17,7 @@ __author__ = 'HPE'
 from sushy.resources.manager import manager
 from sushy import utils as sushy_utils
 
+from proliantutils.redfish.resources.manager import security_service
 from proliantutils.redfish.resources.manager import virtual_media
 from proliantutils.redfish import utils
 
@@ -48,4 +49,12 @@ class HPEManager(manager.Manager):
         """
         return virtual_media.VirtualMediaCollection(
             self._conn, utils.get_subresource_path_by(self, 'VirtualMedia'),
+            redfish_version=self.redfish_version)
+
+    @property
+    @sushy_utils.cache_it
+    def securityservice(self):
+        return security_service.SecurityService(
+            self._conn, utils.get_subresource_path_by(
+                self, ['Oem', 'Hpe', 'Links', 'SecurityService']),
             redfish_version=self.redfish_version)

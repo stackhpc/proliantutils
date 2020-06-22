@@ -1,0 +1,14 @@
+{
+  "@odata.context": "/redfish/v1/$metadata#HpeiLOSecurityParamCollection.HpeiLOSecurityParamCollection",
+  "@odata.etag": "W/\"1E796226\"",
+  "@odata.id": "/redfish/v1/Managers/1/SecurityService/SecurityDashboard/SecurityParams",
+  "@odata.type": "#HpeiLOSecurityParamCollection.HpeiLOSecurityParamCollection",
+  "Description": "iLO Security Parameter Collection",
+  "Name": "Security Parameter Collection",
+  "Members": [{
+    "@odata.id": "/redfish/v1/Managers/1/SecurityService/SecurityDashboard/SecurityParams/0"
+  }, {
+    "@odata.id": "/redfish/v1/Managers/1/SecurityService/SecurityDashboard/SecurityParams/1"
+  }],
+  "Members@odata.count": 2
+}
