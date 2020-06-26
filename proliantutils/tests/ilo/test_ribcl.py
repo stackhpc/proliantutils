@@ -19,6 +19,7 @@ import json
 import re
 import unittest
 import xml.etree.ElementTree as ET
+import xmltodict
 
 import ddt
 import mock
@@ -102,6 +103,7 @@ class IloRibclTestCase(unittest.TestCase):
         self.ilo = ribcl.RIBCLOperations("x.x.x.x", "admin",
                                          "Admin", 60, 443)
         self.ilo.init_model_based_tags('ProLiant DL580 Gen8')
+        self.maxDiff = None
 
     def test_init_model_based_tags_gen7(self):
         self.ilo.init_model_based_tags('Proliant DL380 G7')
@@ -828,15 +830,19 @@ class IloRibclTestCase(unittest.TestCase):
         upload_file_to_mock.assert_called_once_with(
             (self.ilo.host, self.ilo.port), self.ilo.timeout)
 
-        root_xml_string = constants.UPDATE_ILO_FIRMWARE_INPUT_XML % (
+        ref_root_xml_string = constants.UPDATE_ILO_FIRMWARE_INPUT_XML % (
             self.ilo.password, self.ilo.login, 12345, 'raw_fw_file.bin')
-        root_xml_string = re.sub(r"\n\s*", '', root_xml_string)
+        ref_root_xml_string = re.sub(r"\n\s*", '', ref_root_xml_string)
+        ref_dict = xmltodict.parse(ref_root_xml_string)
+        ref_string = json.dumps(ref_dict, sort_keys=True)
 
         ((ribcl_obj, xml_elem), the_ext_header_dict) = (
             _request_ilo_mock.call_args)
 
-        self.assertEqual(root_xml_string,
-                         ET.tostring(xml_elem).decode('latin-1'))
+        actual_dict = xmltodict.parse(ET.tostring(xml_elem).decode('latin-1'))
+        actual_string = json.dumps(actual_dict, sort_keys=True)
+        self.assertEqual(ref_string, actual_string)
+
         self.assertDictEqual(the_ext_header_dict['extra_headers'],
                              {'Cookie': 'hickory-dickory-dock'})
 
@@ -862,15 +868,19 @@ class IloRibclTestCase(unittest.TestCase):
         upload_file_to_mock.assert_called_once_with(
             (self.ilo.host, self.ilo.port), self.ilo.timeout)
 
-        root_xml_string = constants.UPDATE_NONILO_FIRMWARE_INPUT_XML % (
+        ref_root_xml_string = constants.UPDATE_NONILO_FIRMWARE_INPUT_XML % (
             self.ilo.password, self.ilo.login, 12345, 'raw_fw_file.bin')
-        root_xml_string = re.sub(r"\n\s*", '', root_xml_string)
+        ref_root_xml_string = re.sub(r"\n\s*", '', ref_root_xml_string)
+        ref_dict = xmltodict.parse(ref_root_xml_string)
+        ref_string = json.dumps(ref_dict, sort_keys=True)
 
         ((ribcl_obj, xml_elem), the_ext_header_dict) = (
             _request_ilo_mock.call_args)
 
-        self.assertEqual(root_xml_string,
-                         ET.tostring(xml_elem).decode('latin-1'))
+        actual_dict = xmltodict.parse(ET.tostring(xml_elem).decode('latin-1'))
+        actual_string = json.dumps(actual_dict, sort_keys=True)
+        self.assertEqual(ref_string, actual_string)
+
         self.assertDictEqual(the_ext_header_dict['extra_headers'],
                              {'Cookie': 'hickory-dickory-dock'})
 
