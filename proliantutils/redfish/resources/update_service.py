@@ -15,7 +15,6 @@
 __author__ = 'HPE'
 
 import sushy
-
 from sushy.resources import base
 from sushy.resources import common as sushy_common
 

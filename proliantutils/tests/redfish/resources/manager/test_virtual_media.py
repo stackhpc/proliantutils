@@ -17,10 +17,9 @@ __author__ = 'HPE'
 import json
 
 import mock
-import testtools
-
 from sushy import exceptions
 from sushy.resources.manager import virtual_media as sushy_virt_media
+import testtools
 
 from proliantutils import exception
 from proliantutils.redfish.resources.manager import constants

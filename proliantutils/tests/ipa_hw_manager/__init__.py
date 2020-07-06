@@ -12,11 +12,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import six
 import sys
 
 import mock
 from oslo_utils import importutils
+import six
+
 
 ironic_python_agent = importutils.try_import('ironic_python_agent')
 if not ironic_python_agent:

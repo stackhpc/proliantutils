@@ -12,12 +12,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from proliantutils import exception
-from proliantutils import log
 from sushy.resources import base
 
+from proliantutils import exception
 from proliantutils.hpssa import constants
 from proliantutils.hpssa import manager
+from proliantutils import log
 from proliantutils.redfish.resources.system.storage import \
     constants as storage_const
 from proliantutils.redfish.resources.system.storage import \

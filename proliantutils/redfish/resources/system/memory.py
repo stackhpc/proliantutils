@@ -12,9 +12,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import collections
+
 from sushy.resources import base
 
-import collections
 from proliantutils.redfish.resources.system import constants as sys_cons
 from proliantutils.redfish.resources.system import mappings
 

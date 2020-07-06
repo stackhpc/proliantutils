@@ -15,6 +15,7 @@
 __author__ = 'HPE'
 
 import re
+
 import sushy
 from sushy.resources import base
 from sushy.resources.system import system
@@ -38,7 +39,6 @@ from proliantutils.redfish.resources.system.storage import simple_storage
 from proliantutils.redfish.resources.system.storage import \
     smart_storage as hpe_smart_storage
 from proliantutils.redfish.resources.system.storage import storage
-
 from proliantutils.redfish import utils
 
 

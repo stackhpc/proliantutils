@@ -11,10 +11,13 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+
 """IloClient module"""
 
 import collections
+
 import netaddr
+
 from proliantutils import exception
 from proliantutils.ilo import ipmi
 from proliantutils.ilo import operations
@@ -23,6 +26,7 @@ from proliantutils.ilo import ris
 from proliantutils.ilo.snmp import snmp_cpqdisk_sizes as snmp
 from proliantutils import log
 from proliantutils.redfish import redfish
+
 
 SUPPORTED_RIS_METHODS = [
     'activate_license',

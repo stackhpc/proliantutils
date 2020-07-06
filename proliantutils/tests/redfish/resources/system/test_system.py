@@ -17,6 +17,7 @@ import json
 
 import mock
 import sushy
+from sushy.resources.system import system as sushy_system
 import testtools
 
 from proliantutils import exception
@@ -32,7 +33,6 @@ from proliantutils.redfish.resources.system.storage import smart_storage
 from proliantutils.redfish.resources.system.storage import storage
 from proliantutils.redfish.resources.system import system
 from proliantutils.redfish import utils
-from sushy.resources.system import system as sushy_system
 
 
 class HPESystemTestCase(testtools.TestCase):

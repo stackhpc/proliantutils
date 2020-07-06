@@ -12,13 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-# There is no explicit collection for Drives. That said, a URI link as
-# "/redfish/v1/Systems/1/Storage/1/Drives" will be an invalid URI.
-
-
-from proliantutils.redfish.resources.system.storage import mappings
+"""
+There is no explicit collection for Drives. That said, a URI link as
+"/redfish/v1/Systems/1/Storage/1/Drives" will be an invalid URI.
+"""
 
 from sushy.resources import base
+
+from proliantutils.redfish.resources.system.storage import mappings
 
 
 class Drive(base.ResourceBase):

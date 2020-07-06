@@ -14,12 +14,13 @@
 
 import logging
 
+from sushy.resources import base
 from sushy import utils as sushy_utils
 
 from proliantutils.redfish.resources.system.storage import logical_drive
 from proliantutils.redfish.resources.system.storage import physical_drive
 from proliantutils.redfish import utils
-from sushy.resources import base
+
 
 LOG = logging.getLogger(__name__)
 

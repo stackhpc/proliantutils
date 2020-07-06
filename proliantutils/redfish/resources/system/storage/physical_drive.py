@@ -15,10 +15,9 @@
 from sushy.resources import base
 from sushy import utils as sushy_utils
 
-from proliantutils.redfish import utils
-
 from proliantutils.redfish.resources.system.storage import constants
 from proliantutils.redfish.resources.system.storage import mappings
+from proliantutils.redfish import utils
 
 
 class HPEPhysicalDrive(base.ResourceBase):

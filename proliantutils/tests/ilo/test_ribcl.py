@@ -19,13 +19,13 @@ import json
 import re
 import unittest
 import xml.etree.ElementTree as ET
-import xmltodict
 
 import ddt
 import mock
 import requests
 from requests.packages import urllib3
 from requests.packages.urllib3 import exceptions as urllib3_exceptions
+import xmltodict
 
 from proliantutils import exception
 from proliantutils.ilo import common

@@ -14,14 +14,13 @@
 #    under the License.
 
 import collections
+import json
 
 import ddt
-import json
 import mock
 import sushy
-import testtools
-
 from sushy.resources.system import system
+import testtools
 
 from proliantutils import exception
 from proliantutils.ilo import constants as ilo_cons

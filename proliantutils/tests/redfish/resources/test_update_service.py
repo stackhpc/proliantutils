@@ -14,10 +14,11 @@
 #    under the License.
 
 import json
+import time
+
 import mock
 import sushy
 import testtools
-import time
 
 from proliantutils import exception
 from proliantutils.ilo import common

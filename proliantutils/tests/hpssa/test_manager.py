@@ -12,9 +12,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import time
+
 import mock
 import testtools
-import time
 
 from proliantutils import exception
 from proliantutils.hpssa import manager
