@@ -16,6 +16,7 @@ import os
 import shutil
 import tarfile
 import tempfile
+import time
 
 import mock
 from oslo_concurrency import processutils
@@ -152,6 +153,7 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
         os.remove(file_object.name)
         os.remove(tar_file.name)
 
+    @mock.patch.object(time, 'sleep')
     @mock.patch.object(utils, 'validate_href')
     @mock.patch.object(utils, 'verify_image_checksum')
     @mock.patch.object(sum_controller, '_execute_sum')
@@ -164,21 +166,23 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
     def test_update_firmware(self, execute_mock, mkdir_mock,
                              exists_mock, mkdtemp_mock, rmtree_mock,
                              listdir_mock, execute_sum_mock,
-                             verify_image_mock, validate_mock):
+                             verify_image_mock, validate_mock, sleep_mock):
         execute_sum_mock.return_value = 'SUCCESS'
         listdir_mock.return_value = ['SPP_LABEL']
         mkdtemp_mock.return_value = "/tempdir"
         null_output = ["", ""]
         exists_mock.side_effect = [True, False]
         execute_mock.side_effect = [null_output, null_output]
-
-        ret_val = sum_controller.update_firmware(self.node)
+        url = "http://a.b.c.d/spp.iso"
+        checksum = "12345678"
+        components = ['abc', 'pqr']
+        ret_val = sum_controller.update_firmware(self.node, url, checksum,
+                                                 components)
 
         execute_mock.assert_any_call('mount', "/dev/disk/by-label/SPP_LABEL",
                                      "/tempdir")
         execute_sum_mock.assert_any_call('/tempdir/hp/swpackages/hpsum',
-                                         '/tempdir',
-                                         components=None)
+                                         '/tempdir', components=components)
         calls = [mock.call("/dev/disk/by-label/SPP_LABEL"),
                  mock.call("/tempdir/packages/smartupdate")]
         exists_mock.assert_has_calls(calls, any_order=False)
@@ -187,6 +191,7 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
         rmtree_mock.assert_called_once_with("/tempdir", ignore_errors=True)
         self.assertEqual('SUCCESS', ret_val)
 
+    @mock.patch.object(time, 'sleep')
     @mock.patch.object(utils, 'validate_href')
     @mock.patch.object(utils, 'verify_image_checksum')
     @mock.patch.object(sum_controller, '_execute_sum')
@@ -199,17 +204,22 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
     def test_update_firmware_sum(self, execute_mock, mkdir_mock,
                                  exists_mock, mkdtemp_mock, rmtree_mock,
                                  listdir_mock, execute_sum_mock,
-                                 verify_image_mock, validate_mock):
+                                 verify_image_mock, validate_mock, sleep_mock):
         execute_sum_mock.return_value = 'SUCCESS'
         listdir_mock.return_value = ['SPP_LABEL']
         mkdtemp_mock.return_value = "/tempdir"
         null_output = ["", ""]
-        exists_mock.side_effect = [True, True]
-        execute_mock.side_effect = [null_output, null_output]
+        exists_mock.side_effect = [True, True, True, True]
+        execute_mock.side_effect = [null_output, null_output,
+                                    null_output, null_output]
+        url = "http://a.b.c.d/spp.iso"
+        checksum = "12345678"
 
-        ret_val = sum_controller.update_firmware(self.node)
+        ret_val = sum_controller.update_firmware(
+            self.node, url, checksum)
 
-        execute_mock.assert_any_call('mount', "/dev/disk/by-label/SPP_LABEL",
+        execute_mock.assert_any_call('mount',
+                                     "/dev/disk/by-label/SPP_LABEL",
                                      "/tempdir")
         execute_sum_mock.assert_any_call('/tempdir/packages/smartupdate',
                                          '/tempdir',
@@ -226,41 +236,54 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
     def test_update_firmware_throws_for_nonexistent_file(self,
                                                          validate_href_mock):
         invalid_file_path = '/some/invalid/file/path'
+        url = "http://a.b.c.d/spp.iso"
+        checksum = "12345678"
+        components = ['abc', 'pqr']
         value = ("Got HTTP code 503 instead of 200 in response to "
                  "HEAD request.")
         validate_href_mock.side_effect = exception.ImageRefValidationFailed(
             reason=value, image_href=invalid_file_path)
 
         exc = self.assertRaises(exception.SUMOperationError,
-                                sum_controller.update_firmware, self.node)
+                                sum_controller.update_firmware, self.node,
+                                url, checksum, components)
         self.assertIn(value, str(exc))
 
+    @mock.patch.object(time, 'sleep')
     @mock.patch.object(utils, 'validate_href')
     @mock.patch.object(os.path, 'exists')
     @mock.patch.object(os, 'listdir')
     def test_update_firmware_device_file_not_found(self,
                                                    listdir_mock, exists_mock,
-                                                   validate_mock):
+                                                   validate_mock, sleep_mock):
         listdir_mock.return_value = ['SPP_LABEL']
         exists_mock.return_value = False
+        url = "http://a.b.c.d/spp.iso"
+        checksum = "12345678"
+        components = ['abc', 'pqr']
 
         msg = ("An error occurred while performing SUM based firmware "
                "update, reason: Unable to find the virtual media device "
                "for SUM")
         exc = self.assertRaises(exception.SUMOperationError,
-                                sum_controller.update_firmware, self.node)
+                                sum_controller.update_firmware, self.node,
+                                url, checksum, components=components)
         self.assertEqual(msg, str(exc))
         exists_mock.assert_called_once_with("/dev/disk/by-label/SPP_LABEL")
 
+    @mock.patch.object(time, 'sleep')
     @mock.patch.object(utils, 'validate_href')
     @mock.patch.object(utils, 'verify_image_checksum')
     @mock.patch.object(os, 'listdir')
     @mock.patch.object(os.path, 'exists')
     def test_update_firmware_invalid_checksum(self, exists_mock,
                                               listdir_mock, verify_image_mock,
-                                              validate_mock):
+                                              validate_mock, sleep_mock):
         listdir_mock.return_value = ['SPP_LABEL']
         exists_mock.side_effect = [True, False]
+        url = "http://1.2.3.4/SPP.iso"
+        checksum = "1234567890"
+        components = ['abc', 'pqr']
 
         value = ("Error verifying image checksum. Image "
                  "http://1.2.3.4/SPP.iso failed to verify against checksum "
@@ -270,12 +293,14 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
             reason=value, image_href='http://1.2.3.4/SPP.iso')
 
         self.assertRaisesRegex(exception.SUMOperationError, value,
-                               sum_controller.update_firmware, self.node)
+                               sum_controller.update_firmware, self.node,
+                               url, checksum, components=components)
 
         verify_image_mock.assert_called_once_with(
             '/dev/disk/by-label/SPP_LABEL', '1234567890')
         exists_mock.assert_called_once_with("/dev/disk/by-label/SPP_LABEL")
 
+    @mock.patch.object(time, 'sleep')
     @mock.patch.object(utils, 'validate_href')
     @mock.patch.object(utils, 'verify_image_checksum')
     @mock.patch.object(processutils, 'execute')
@@ -286,16 +311,20 @@ class SUMFirmwareUpdateTest(testtools.TestCase):
     def test_update_firmware_mount_fails(self, listdir_mock,
                                          exists_mock, mkdir_mock,
                                          mkdtemp_mock, execute_mock,
-                                         verify_image_mock, validate_mock):
+                                         verify_image_mock, validate_mock,
+                                         sleep_mock):
         listdir_mock.return_value = ['SPP_LABEL']
         exists_mock.return_value = True
         mkdtemp_mock.return_value = "/tempdir"
         execute_mock.side_effect = processutils.ProcessExecutionError
+        url = "http://a.b.c.d/spp.iso"
+        checksum = "12345678"
 
         msg = ("Unable to mount virtual media device "
                "/dev/disk/by-label/SPP_LABEL")
         exc = self.assertRaises(exception.SUMOperationError,
-                                sum_controller.update_firmware, self.node)
+                                sum_controller.update_firmware, self.node,
+                                url, checksum)
         self.assertIn(msg, str(exc))
         exists_mock.assert_called_once_with("/dev/disk/by-label/SPP_LABEL")
 

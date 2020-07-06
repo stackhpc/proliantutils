@@ -155,25 +155,28 @@ def _parse_sum_ouput(exit_code):
         return "UPDATE STATUS: UNKNOWN"
 
 
-def update_firmware(node):
+def update_firmware(node, url, checksum, components=None):
     """Performs SUM based firmware update on the node.
 
     This method performs SUM firmware update by mounting the
     SPP ISO on the node. It performs firmware update on all or
     some of the firmware components.
 
-    :param node: A node object of type dict.
+    :param node: A dictionary of the node object.
+    :param url: URL of SPP (Service Pack for Proliant) ISO.
+    :param checksum: MD5 checksum of SPP ISO to verify the image.
+    :param components: List of filenames of the firmware components to be
+        flashed. If not provided, the firmware update is performed on all
+        the firmware components.
     :returns: Operation Status string.
     :raises: SUMOperationError, when the vmedia device is not found or
         when the mount operation fails or when the image validation fails.
     :raises: IloConnectionError, when the iLO connection fails.
     :raises: IloError, when vmedia eject or insert operation fails.
     """
-    sum_update_iso = node['clean_step']['args'].get('url')
-
     # Validates the http image reference for SUM update ISO.
     try:
-        utils.validate_href(sum_update_iso)
+        utils.validate_href(url)
     except exception.ImageRefValidationFailed as e:
         raise exception.SUMOperationError(reason=e)
 
@@ -181,9 +184,9 @@ def update_firmware(node):
     # is identified by matching its label.
     time.sleep(WAIT_TIME_DISK_LABEL_TO_BE_VISIBLE)
     vmedia_device_dir = "/dev/disk/by-label/"
-    for file in os.listdir(vmedia_device_dir):
-        if fnmatch.fnmatch(file, 'SPP*'):
-            vmedia_device_file = os.path.join(vmedia_device_dir, file)
+    for fname in os.listdir(vmedia_device_dir):
+        if fnmatch.fnmatch(fname, 'SPP*'):
+            vmedia_device_file = os.path.join(vmedia_device_dir, fname)
 
     if not os.path.exists(vmedia_device_file):
         msg = "Unable to find the virtual media device for SUM"
@@ -191,9 +194,8 @@ def update_firmware(node):
 
     # Validates the SPP ISO image for any file corruption using the checksum
     # of the ISO file.
-    expected_checksum = node['clean_step']['args'].get('checksum')
     try:
-        utils.verify_image_checksum(vmedia_device_file, expected_checksum)
+        utils.verify_image_checksum(vmedia_device_file, checksum)
     except exception.ImageRefValidationFailed as e:
         raise exception.SUMOperationError(reason=e)
 
@@ -215,7 +217,6 @@ def update_firmware(node):
         if not os.path.exists(sum_file_path):
             sum_file_path = os.path.join(vmedia_mount_point, HPSUM_LOCATION)
 
-        components = node['clean_step']['args'].get('components')
         result = _execute_sum(sum_file_path, vmedia_mount_point,
                               components=components)
 
