@@ -1115,6 +1115,19 @@ class RedfishOperations(operations.IloOperations):
         sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
         return sushy_system.has_disk_erase_completed()
 
+    def do_one_button_secure_erase(self):
+        """Perform the one button secure erase on the hardware.
+
+        The One-button secure erase process resets iLO and deletes all licenses
+        stored there, resets BIOS settings, and deletes all AHS and warranty
+        data stored on the system. It also erases supported non-volatile
+        storage data and deletes any deployment settings profiles.
+
+        :raises: IloError, on an error from iLO.
+        """
+        sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
+        sushy_system.do_one_button_secure_erase()
+
     def get_current_bios_settings(self, only_allowed_settings=False):
         """Get current BIOS settings.
 

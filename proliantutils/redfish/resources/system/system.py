@@ -60,9 +60,17 @@ class PowerButtonActionField(base.CompositeField):
     target_uri = base.Field('target', required=True)
 
 
+class OneButtonSecureEraseActionField(base.CompositeField):
+    target_uri = base.Field('target', required=True)
+
+
 class HpeActionsField(base.CompositeField):
     computer_system_ext_powerbutton = (
         PowerButtonActionField('#HpeComputerSystemExt.PowerButton'))
+
+    computer_system_ext_one_button_secure_erase = (
+        OneButtonSecureEraseActionField(
+            '#HpeComputerSystemExt.SecureSystemErase'))
 
 
 class HPESystem(system.System):
@@ -104,6 +112,42 @@ class HPESystem(system.System):
                 resource=self.path)
 
         return push_action
+
+    def _get_hpe_one_button_secure_erase_action_element(self):
+        one_button_secure_erase_action = (
+            self._hpe_actions.computer_system_ext_one_button_secure_erase)
+        if not one_button_secure_erase_action:
+            raise exception.MissingAttributeError(
+                attribute=(
+                    'Oem/Hpe/Actions/#HpeComputerSystemExt.SecureSystemErase'),
+                resource=self.path)
+
+        return one_button_secure_erase_action
+
+    def do_one_button_secure_erase(self):
+        """Perform the one button secure erase on the hardware.
+
+        The One-button secure erase process resets iLO and deletes all licenses
+        stored there, resets BIOS settings, and deletes all AHS and warranty
+        data stored on the system. It also erases supported non-volatile
+        storage data and deletes any deployment settings profiles.
+
+        :raises: IloError, on an error from iLO.
+        """
+        try:
+            target_uri = (
+                self._get_hpe_one_button_secure_erase_action_element().
+                target_uri)
+            data = {
+                "SystemROMAndiLOErase": True,
+                "UserDataErase": True
+            }
+            self._conn.post(target_uri, data=data)
+        except sushy.exceptions.SushyError as e:
+            msg = ("The Redfish controller failed to perform one button "
+                   "secure erase operation on the hardware. Error: %(error)s"
+                   % {'error': str(e)})
+            raise exception.IloError(msg)
 
     def push_power_button(self, target_value):
         """Reset the system in hpe exclusive manner.

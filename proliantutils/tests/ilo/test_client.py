@@ -941,6 +941,29 @@ class IloClientTestCase(testtools.TestCase):
                                 'SSD', None)
 
     @mock.patch.object(client.IloClient.cls, '_call_method')
+    def test_do_one_button_secure_erase(self, call_mock):
+        self.client.do_one_button_secure_erase()
+        self.assertTrue(call_mock.called)
+
+    @mock.patch.object(ris.RISOperations, 'get_product_name')
+    def test_do_one_button_secure_erase_gen9(self, get_product_mock):
+        self.client.model = 'Gen9'
+        get_product_mock.return_value = 'ProLiant BL460c Gen9'
+        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
+                                'The specified operation is not supported '
+                                'on current platform.',
+                                self.client.do_one_button_secure_erase)
+
+    @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
+    def test_do_one_button_secure_erase_gen8(self, get_product_mock):
+        self.client.model = 'Gen8'
+        get_product_mock.return_value = 'ProLiant DL380 G8'
+        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
+                                'The specified operation is not supported '
+                                'on current platform.',
+                                self.client.do_one_button_secure_erase)
+
+    @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_has_disk_erase_completed(self, call_mock):
         self.client.has_disk_erase_completed()
         call_mock.assert_called_once_with('has_disk_erase_completed')

@@ -524,6 +524,20 @@ class IloOperations(object):
         """
         raise exception.IloCommandNotSupportedError(ERRMSG)
 
+    def do_one_button_secure_erase(self):
+        """Perform the one button secure erase on the hardware.
+
+        The One-button secure erase process resets iLO and deletes all licenses
+        stored there, resets BIOS settings, and deletes all AHS and warranty
+        data stored on the system. It also erases supported non-volatile
+        storage data and deletes any deployment settings profiles.
+
+        :raises: IloError, on an error from iLO.
+        :raises: IloCommandNotSupportedError, if the command is
+                 not supported on the server.
+        """
+        raise exception.IloCommandNotSupportedError(ERRMSG)
+
     def get_available_disk_types(self):
         """Get the list of all disk type available in server
 

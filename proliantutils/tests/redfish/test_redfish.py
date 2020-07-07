@@ -1799,6 +1799,12 @@ class RedfishOperationsTestCase(testtools.TestCase):
         self.assertEqual('PowerOff', result)
 
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_do_one_button_secure_erase(self, get_system_mock):
+        self.rf_client.do_one_button_secure_erase()
+        (get_system_mock.return_value.
+         do_one_button_secure_erase.assert_called_once())
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
     def test_do_disk_erase_hdd(self, get_system_mock):
         self.rf_client.do_disk_erase('HDD')
         get_system_mock.return_value.do_disk_erase.assert_called_once_with(

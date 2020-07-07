@@ -53,6 +53,22 @@ class HPESystemTestCase(testtools.TestCase):
         self.assertEqual(sys_cons.SUPPORTED_LEGACY_BIOS_AND_UEFI,
                          self.sys_inst.supported_boot_mode)
 
+    def test__get_hpe_one_button_secure_erase_action_element(self):
+        value = self.sys_inst._get_hpe_one_button_secure_erase_action_element()
+        self.assertEqual("/redfish/v1/Systems/1/Actions/Oem/Hpe/"
+                         "HpeComputerSystemExt.SecureSystemErase",
+                         value.target_uri)
+
+    def test__get_hpe_one_button_secure_erase_action_element_missing_action(
+            self):
+        (self.sys_inst._hpe_actions.
+         computer_system_ext_one_button_secure_erase) = None
+        self.assertRaisesRegex(
+            exception.MissingAttributeError,
+            'Oem/Hpe/Actions/#HpeComputerSystemExt.SecureSystemErase is '
+            'missing',
+            self.sys_inst._get_hpe_one_button_secure_erase_action_element)
+
     def test__get_hpe_push_power_button_action_element(self):
         value = self.sys_inst._get_hpe_push_power_button_action_element()
         self.assertEqual("/redfish/v1/Systems/1/Actions/Oem/Hpe/"
@@ -884,6 +900,35 @@ class HPESystemTestCase(testtools.TestCase):
             "The Redfish controller failed to get the status of sanitize disk "
             "erase. Error:",
             self.sys_inst.has_disk_erase_completed)
+
+    @mock.patch.object(system.HPESystem,
+                       '_get_hpe_one_button_secure_erase_action_element')
+    def test_do_one_button_secure_erase(
+            self, secure_erase_action_mock):
+        target_uri = (
+            '/redfish/v1/Systems/1/Actions/Oem/Hpe/'
+            '#HpeComputerSystemExt.SecureSystemErase')
+        data = {
+            "SystemROMAndiLOErase": True,
+            "UserDataErase": True}
+        type(secure_erase_action_mock.return_value).target_uri = target_uri
+        self.sys_inst.do_one_button_secure_erase()
+        self.sys_inst._conn.post.assert_called_once_with(target_uri, data=data)
+
+    @mock.patch.object(system.HPESystem,
+                       '_get_hpe_one_button_secure_erase_action_element')
+    def test_do_one_button_secure_erase_failed(
+            self, secure_erase_action_mock):
+        target_uri = (
+            '/redfish/v1/Systems/1/Actions/Oem/Hpe/'
+            '#HpeComputerSystemExt.SecureSystemErase')
+        type(secure_erase_action_mock.return_value).target_uri = target_uri
+        self.sys_inst._conn.post.side_effect = sushy.exceptions.SushyError
+        self.assertRaisesRegexp(
+            exception.IloError,
+            "The Redfish controller failed to perform one button "
+            "secure erase operation on the hardware. Error:",
+            self.sys_inst.do_one_button_secure_erase)
 
     @mock.patch.object(system.HPESystem,
                        '_get_drives_has_raid')
