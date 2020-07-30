@@ -119,7 +119,9 @@ SUPPORTED_REDFISH_METHODS = [
     'set_iscsi_info',
     'unset_iscsi_info',
     'get_iscsi_initiator_info',
-    'set_iscsi_initiator_info'
+    'set_iscsi_initiator_info',
+    'set_http_boot_url',
+    'get_http_boot_url'
 ]
 
 LOG = log.get_logger(__name__)

@@ -555,7 +555,7 @@ class RedfishOperationsTestCase(testtools.TestCase):
         self.assertRaisesRegex(
             exception.IloInvalidInputError,
             ('Invalid input "test". Valid devices: NETWORK, '
-             'HDD, ISCSI or CDROM.'),
+             'HDD, ISCSI, UEFIHTTP or CDROM.'),
             self.rf_client.update_persistent_boot, ['test'])
 
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
@@ -578,7 +578,7 @@ class RedfishOperationsTestCase(testtools.TestCase):
         self.assertRaisesRegex(
             exception.IloInvalidInputError,
             ('Invalid input "test". Valid devices: NETWORK, '
-             'HDD, ISCSI or CDROM.'),
+             'HDD, ISCSI, UEFIHTTP or CDROM.'),
             self.rf_client.set_one_time_boot, 'test')
 
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
@@ -1913,3 +1913,98 @@ class RedfishOperationsTestCase(testtools.TestCase):
                                                                     'SSD']
         self.assertEqual(
             ['HDD', 'SSD'], self.rf_client.get_available_disk_types())
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_get_http_boot_url(self, get_system_mock):
+        with open('proliantutils/tests/redfish/'
+                  'json_samples/bios.json', 'r') as f:
+            jsonval = json.loads(f.read()).get("Default")
+        type(
+            get_system_mock.return_value.bios_settings).json = (
+                mock.PropertyMock(return_value=jsonval))
+        settings = jsonval.get('Attributes')
+        expected_url_boot_file = settings.get('UrlBootFile')
+
+        actual_url_boot_file = self.rf_client.get_http_boot_url()
+        self.assertEqual(expected_url_boot_file, actual_url_boot_file)
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_get_http_boot_url_fail(self, get_system_mock):
+        bios_mock = mock.PropertyMock(
+            side_effect=sushy.exceptions.SushyError)
+        type(get_system_mock.return_value).bios_settings = bios_mock
+        self.assertRaisesRegex(
+            exception.IloError,
+            'The attribute "UrlBootFile" not found.',
+            self.rf_client.get_http_boot_url)
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_set_http_boot_url_dhcp_default(self, system_mock):
+        bios_ps_mock = mock.MagicMock(spec=bios.BIOSPendingSettings)
+        pending_settings_mock = mock.PropertyMock(return_value=bios_ps_mock)
+        type(system_mock.return_value.bios_settings).pending_settings = (
+            pending_settings_mock)
+
+        url = 'a.b.c'
+        expected_parameter = {
+            'PreBootNetwork': 'Auto',
+            'UrlBootFile': 'a.b.c',
+            'Dhcpv4': 'Enabled'
+        }
+        self.rf_client.set_http_boot_url(url)
+
+        bios_ps_mock.update_bios_data_by_post.assert_called_once_with(
+            expected_parameter)
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_set_http_boot_url_dhcp_enabled(self, system_mock):
+        bios_ps_mock = mock.MagicMock(spec=bios.BIOSPendingSettings)
+        pending_settings_mock = mock.PropertyMock(return_value=bios_ps_mock)
+        type(system_mock.return_value.bios_settings).pending_settings = (
+            pending_settings_mock)
+
+        dhcp_enabled = True
+        url = 'a.b.c'
+        expected_parameter = {
+            'PreBootNetwork': 'Auto',
+            'UrlBootFile': 'a.b.c',
+            'Dhcpv4': 'Enabled'
+        }
+        self.rf_client.set_http_boot_url(url, dhcp_enabled)
+
+        bios_ps_mock.update_bios_data_by_post.assert_called_once_with(
+            expected_parameter)
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_set_http_boot_url_dhcp_disabled(self, system_mock):
+        bios_ps_mock = mock.MagicMock(spec=bios.BIOSPendingSettings)
+        pending_settings_mock = mock.PropertyMock(return_value=bios_ps_mock)
+        type(system_mock.return_value.bios_settings).pending_settings = (
+            pending_settings_mock)
+
+        dhcp_enabled = False
+        url = 'a.b.c'
+        expected_parameter = {
+            'PreBootNetwork': 'Auto',
+            'UrlBootFile': 'a.b.c',
+            'Dhcpv4': 'Disabled'
+        }
+        self.rf_client.set_http_boot_url(url, dhcp_enabled)
+
+        bios_ps_mock.update_bios_data_by_post.assert_called_once_with(
+            expected_parameter)
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_set_http_boot_url_raises_exception(self, system_mock):
+        pending_settings_mock = mock.PropertyMock(
+            side_effect=sushy.exceptions.SushyError)
+
+        type(system_mock.return_value.bios_settings).pending_settings = (
+            pending_settings_mock)
+
+        dhcp_enabled = True
+        url = 'a.b.c'
+        self.assertRaisesRegex(
+            exception.IloError,
+            'Could not set HTTPS URL on the iLO.',
+            self.rf_client.set_http_boot_url, url, dhcp_enabled)
