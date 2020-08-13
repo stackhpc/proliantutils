@@ -1,1 +1,1 @@
-README.rst
+doc/proliantutils_api_reference.rst
