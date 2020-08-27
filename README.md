@@ -1,1 +1,1 @@
-doc/proliantutils_api_reference.rst
+doc/proliantutils_api_reference.md
