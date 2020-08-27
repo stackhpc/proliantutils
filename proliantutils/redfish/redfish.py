@@ -654,6 +654,72 @@ class RedfishOperations(operations.IloOperations):
             LOG.debug(msg)
             raise exception.IloError(msg)
 
+    def _get_security_dashboard_values(self):
+        """Gets all the parameters related to security dashboard.
+
+        :return: a dictionary of the security dashboard values
+                 with their security status and security parameters
+                 with their complete details and security status.
+        :raises: IloError, if security dashboard or their params
+            not found or on an error from iLO.
+        """
+        sec_capabilities = {}
+        sushy_manager = self._get_sushy_manager(PROLIANT_MANAGER_ID)
+        try:
+
+            security_dashboard = (
+                sushy_manager.securityservice.securitydashboard)
+            security_params = (
+                sushy_manager.securityservice.securityparamscollectionuri)
+            sec_capabilities.update(
+                {'server_configuration_lock_status': (
+                 security_dashboard.server_configuration_lock_status),
+                 'overall_security_status': (
+                 security_dashboard.overall_status)})
+            security_parameters = {}
+            param_members = security_params.get_members()
+            for param in param_members:
+                param_dict = {param.name: {'security_status': param.status,
+                                           'state': param.state,
+                                           'ignore': param.ignore}}
+                if param.description:
+                    param_dict[param.name].update(
+                        {'description': param.description})
+                if param.recommended_action:
+                    param_dict[param.name].update(
+                        {'recommended_action': param.recommended_action})
+                security_parameters.update(param_dict)
+            sec_capabilities.update(
+                {'security_parameters': security_parameters})
+        except sushy.exceptions.SushyError as e:
+            msg = (self._("The Redfish controller is unable to get "
+                          "resource or its members. Error "
+                          "%(error)s)") % {'error': str(e)})
+            LOG.debug(msg)
+            raise exception.IloError(msg)
+
+        return sec_capabilities
+
+    def _parse_security_dashboard_values_for_capabilities(self):
+        """Parses the security dashboard parameters.
+
+        :returns: a dictionary of only those security parameters and their
+            security status which are applicable for ironic.
+        """
+        values = self._get_security_dashboard_values()
+        ironic_sec_capabilities = {}
+        ironic_sec_capabilities.update(
+            {'overall_security_status': values.get('overall_security_status')})
+        param_values = values.get('security_parameters')
+        p_map = {'Last Firmware Scan Result': 'last_firmware_scan_result',
+                 'Security Override Switch': 'security_override_switch'}
+        p_keys = p_map.keys()
+        for p_key, p_val in param_values.items():
+            if p_key in p_keys:
+                p_dict = {p_map.get(p_key): p_val.get('security_status')}
+                ironic_sec_capabilities.update(p_dict)
+        return ironic_sec_capabilities
+
     def get_server_capabilities(self):
         """Returns the server capabilities
 
@@ -725,6 +791,9 @@ class RedfishOperations(operations.IloOperations):
                      json.dumps(memory_data.has_nvdimm_n)),
                      'logical_nvdimm_n': (
                      json.dumps(memory_data.has_logical_nvdimm_n))})
+
+            capabilities.update(
+                self._parse_security_dashboard_values_for_capabilities())
 
         except sushy.exceptions.SushyError as e:
             msg = (self._("The Redfish controller is unable to get "
