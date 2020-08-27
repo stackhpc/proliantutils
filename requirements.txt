@@ -10,3 +10,4 @@ pysnmp>=4.2.3,<5.0.0  # BSD
 
 # Redfish communication uses the Sushy library
 sushy>=3.1.0
+pyOpenSSL>=19.1.0

@@ -14,9 +14,12 @@
 
 __author__ = 'HPE'
 
+from base64 import b64decode
 import json
 import re
 
+from OpenSSL.crypto import FILETYPE_ASN1
+from OpenSSL.crypto import load_certificate
 from six.moves.urllib import parse
 import sushy
 from sushy.resources.system import mappings as sushy_map
@@ -113,6 +116,9 @@ SUPPORTED_BOOT_MODE_MAP = {
     sys_cons.SUPPORTED_LEGACY_BIOS_AND_UEFI: (
         ilo_cons.SUPPORTED_BOOT_MODE_LEGACY_BIOS_AND_UEFI)
 }
+
+_CERTIFICATE_PATTERN = (
+    r'-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----')
 
 LOG = log.get_logger(__name__)
 
@@ -1421,17 +1427,33 @@ class RedfishOperations(operations.IloOperations):
                  not supported on the server.
         """
         sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
+
         if(self._is_boot_mode_uefi()):
             cert_list = []
             for cert_file in cert_file_list:
                 with open(cert_file, 'r') as f:
                     data = json.dumps(f.read())
                 p = re.sub(r"\"", "", data)
-                q = re.sub(r"\\n", "\r\n", p)
-                r = q.rstrip()
-                cert = {}
-                cert['X509Certificate'] = r
-                cert_list.append(cert)
+                q = re.sub(r"\\n", "\r\n", p).rstrip()
+
+                c_list = re.findall(_CERTIFICATE_PATTERN, q, re.DOTALL)
+
+                if len(c_list) == 0:
+                    LOG.warning("Could not find any valid certificate in "
+                                "%(cert_file)s. Ignoring." %
+                                {"cert_file": cert_file})
+                    continue
+
+                for content in c_list:
+                    cert = {}
+                    cert['X509Certificate'] = content
+                    cert_list.append(cert)
+
+            if len(cert_list) == 0:
+                msg = (self._("No valid certificate in %(cert_file_list)s.") %
+                       {"cert_file_list": cert_file_list})
+                LOG.debug(msg)
+                raise exception.IloError(msg)
 
             cert_dict = {}
             cert_dict['NewCertificates'] = cert_list
@@ -1448,28 +1470,61 @@ class RedfishOperations(operations.IloOperations):
             msg = 'TLS certificate cannot be upload in BIOS boot mode'
             raise exception.IloCommandNotSupportedInBiosError(msg)
 
-    def remove_tls_certificate(self, fp_list):
+    def remove_tls_certificate(self, cert_file_list):
         """Removes the TLS certificate from the iLO.
 
-        :param fp_list: List of finger prints of the TLS certificates
+        :param cert_file_list: List of TLS certificate files
 
         :raises: IloError, on an error from iLO.
         :raises: IloCommandNotSupportedError, if the command is
                  not supported on the server.
         """
         sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
+
         if(self._is_boot_mode_uefi()):
-            cert = {}
+            cert_dict = {}
             del_cert_list = []
-            for fp in fp_list:
-                cert_fp = {
-                    "FingerPrint": fp
-                }
-                del_cert_list.append(cert_fp)
-            cert.update({"DeleteCertificates": del_cert_list})
+            for cert_file in cert_file_list:
+                with open(cert_file, 'r') as f:
+                    data = json.dumps(f.read())
+                    p = re.sub(r"\"", "", data)
+                    q = re.sub(r"\\n", "\r\n", p).rstrip()
+
+                    c_list = re.findall(_CERTIFICATE_PATTERN, q, re.DOTALL)
+
+                    if len(c_list) == 0:
+                        LOG.warning("Could not find any valid certificate in "
+                                    "%(cert_file)s. Ignoring." %
+                                    {"cert_file": cert_file})
+                        continue
+
+                    for content in c_list:
+                        pem_lines = [line.strip() for line in (
+                            content.strip().split('\n'))]
+
+                        try:
+                            der_data = b64decode(''.join(pem_lines[1:-1]))
+                        except ValueError:
+                            LOG.warning("Illegal base64 encountered "
+                                        "in the certificate.")
+                        else:
+                            cert = load_certificate(FILETYPE_ASN1, der_data)
+                            fp = cert.digest('sha256').decode('ascii')
+                            cert_fp = {
+                                "FingerPrint": fp
+                            }
+                            del_cert_list.append(cert_fp)
+
+            if len(del_cert_list) == 0:
+                msg = (self._("No valid certificate in %(cert_file_list)s.") %
+                       {"cert_file_list": cert_file_list})
+                raise exception.IloError(msg)
+
+            cert_dict.update({"DeleteCertificates": del_cert_list})
+
             try:
                 (sushy_system.bios_settings.tls_config.
-                 tls_config_settings.remove_tls_certificate(cert))
+                 tls_config_settings.remove_tls_certificate(cert_dict))
             except sushy.exceptions.SushyError as e:
                 msg = (self._("The Redfish controller has failed to remove "
                               "TLS certificate. Error %(error)s") %

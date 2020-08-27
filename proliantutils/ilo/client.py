@@ -900,13 +900,15 @@ class IloClient(operations.IloOperations):
     def add_tls_certificate(self, cert_file_list):
         """Adds the TLS certificate to the iLO
 
+        :param cert_file_list: List of TLS certificate files
         :raises: IloError, on an error from iLO.
         """
         return self._call_method('add_tls_certificate', cert_file_list)
 
-    def remove_tls_certificate(self, fp_list):
+    def remove_tls_certificate(self, cert_file_list):
         """Removes the TLS certificate from the iLO
 
+        :param cert_file_list: List of TLS certificate files
         :raises: IloError, on an error from iLO.
         """
-        return self._call_method('remove_tls_certificate', fp_list)
+        return self._call_method('remove_tls_certificate', cert_file_list)

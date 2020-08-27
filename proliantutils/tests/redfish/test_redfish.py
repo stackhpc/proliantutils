@@ -13,7 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
+import builtins
 import collections
+import io
 import json
 
 import ddt
@@ -2050,39 +2053,98 @@ class RedfishOperationsTestCase(testtools.TestCase):
             self.rf_client.add_tls_certificate,
             data)
 
+    @mock.patch.object(builtins, 'open')
     @mock.patch.object(redfish.RedfishOperations, '_is_boot_mode_uefi')
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
     def test_add_tls_certificate(self, get_sushy_system_mock,
-                                 _uefi_boot_mode_mock):
+                                 _uefi_boot_mode_mock, open_mock):
         _uefi_boot_mode_mock.return_value = True
-        cert_file = 'proliantutils/tests/redfish/json_samples/certfile.crt'
-        with open('proliantutils/tests/redfish/'
-                  'json_samples/certfile.crt', 'r') as f:
-            cert_data = f.read()
+        data = (
+            "-----BEGIN CERTIFICATE-----\nMIID7TC\nCF"
+            "g879\n-----END CERTIFICATE-----\n"
+            "-----BEGIN CERTIFICATE-----\nKHY8UP\nGH"
+            "f792\n-----END CERTIFICATE-----\n"
+        )
 
-        import re
-        cert_data = cert_data.rstrip()
-        ref_data = re.sub(r"\n", "\r\n", cert_data)
+        fd_mock = mock.MagicMock(spec=io.BytesIO)
+        open_mock.return_value = fd_mock
+        fd_mock.__enter__.return_value = fd_mock
+        fd_mock.read.return_value = data
+        c_l = [
+            "-----BEGIN CERTIFICATE-----\r\nMIID7TC\r\nCF"
+            "g879\r\n-----END CERTIFICATE-----",
+            "-----BEGIN CERTIFICATE-----\r\nKHY8UP\r\nGH"
+            "f792\r\n-----END CERTIFICATE-----"
+        ]
 
-        data = {
+        expected_data = {
             "NewCertificates": [
                 {
-                    "X509Certificate": ref_data
+                    "X509Certificate": c_l[0],
+                },
+                {
+                    "X509Certificate": c_l[1],
                 }
             ]
         }
+        cert_file = '/path/to/certfile'
+
         self.rf_client.add_tls_certificate([cert_file])
 
         (get_sushy_system_mock.return_value.
          bios_settings.tls_config.tls_config_settings.
-         add_tls_certificate.assert_called_once_with(data))
+         add_tls_certificate.assert_called_once_with(expected_data))
 
+    @mock.patch.object(builtins, 'open')
+    @mock.patch.object(redfish.RedfishOperations, '_is_boot_mode_uefi')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_add_tls_certificate_no_certificate(self, get_sushy_system_mock,
+                                                _uefi_boot_mode_mock,
+                                                open_mock):
+        _uefi_boot_mode_mock.return_value = True
+        data = (
+            "-----UNFORMATED CERTIFICATE-----\nMIID7TC\nCF"
+            "g879\n-----END CERTIFICATE-----\n"
+            "-----UNFORMATED CERTIFICATE-----\nKHY8UP\nGH"
+            "f792\n-----END CERTIFICATE-----\n"
+        )
+
+        fd_mock = mock.MagicMock(spec=io.BytesIO)
+        open_mock.return_value = fd_mock
+        fd_mock.__enter__.return_value = fd_mock
+        fd_mock.read.return_value = data
+        cert_file = "/path/to/certfile"
+
+        self.assertRaisesRegex(
+            exception.IloError,
+            "No valid certificate",
+            self.rf_client.add_tls_certificate, [cert_file])
+
+        (get_sushy_system_mock.return_value.
+         bios_settings.tls_config.tls_config_settings.
+         add_tls_certificate.assert_not_called())
+
+    @mock.patch.object(builtins, 'open')
     @mock.patch.object(redfish.RedfishOperations, '_is_boot_mode_uefi')
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
     def test_add_tls_certificate_raises_ilo_error(self, get_sushy_system_mock,
-                                                  _uefi_boot_mode_mock):
+                                                  _uefi_boot_mode_mock,
+                                                  open_mock):
         _uefi_boot_mode_mock.return_value = True
-        cert_file = 'proliantutils/tests/redfish/json_samples/certfile.crt'
+
+        data = (
+            "-----BEGIN CERTIFICATE-----\nMIID7TC\nCF"
+            "g879\n-----END CERTIFICATE-----\n"
+            "-----BEGIN CERTIFICATE-----\nKHY8UP\nGH"
+            "f792\n-----END CERTIFICATE-----\n"
+        )
+
+        fd_mock = mock.MagicMock(spec=io.BytesIO)
+        open_mock.return_value = fd_mock
+        fd_mock.__enter__.return_value = fd_mock
+        fd_mock.read.return_value = data
+
+        cert_file = '/path/to/certfile'
         (get_sushy_system_mock.return_value.
          bios_settings.tls_config.tls_config_settings.
          add_tls_certificate.side_effect) = (
@@ -2093,26 +2155,143 @@ class RedfishOperationsTestCase(testtools.TestCase):
             'The Redfish controller has failed to upload TLS certificate.',
             self.rf_client.add_tls_certificate, [cert_file])
 
+    @mock.patch.object(redfish, 'load_certificate')
+    @mock.patch.object(redfish, 'b64decode')
+    @mock.patch.object(builtins, 'open')
     @mock.patch.object(redfish.RedfishOperations, '_is_boot_mode_uefi')
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
     def test_remove_tls_certificate(self, get_sushy_system_mock,
-                                    _uefi_boot_mode_mock):
+                                    _uefi_boot_mode_mock, open_mock,
+                                    decode_mock, load_cert_mock):
         _uefi_boot_mode_mock.return_value = True
-        fp = ('FA:3A:68:C7:7E:ED:90:21:D2:FA:3E:54:6B:0C:14:D3:'
-              '2F:8D:43:50:F7:05:A7:0F:1C:68:35:DB:5C:D2:53:28')
+        decode_mock.side_effect = ['first decoded data',
+                                   'second decoded data']
+        cert1_mock = mock.MagicMock()
+        cert2_mock = mock.MagicMock()
+        load_cert_mock.side_effect = [cert1_mock, cert2_mock]
+        cert1_mock.digest.return_value.decode.return_value = "humptydumpty"
+        cert2_mock.digest.return_value.decode.return_value = "hickerydickery"
 
-        cert = {}
-        del_cert_list = []
-        cert_fp = {
-            "FingerPrint": fp
+        data = (
+            "-----BEGIN CERTIFICATE-----\nMIID7TC\nCF"
+            "g879\n-----END CERTIFICATE-----\n"
+            "-----BEGIN CERTIFICATE-----\nKHY8UP\nGH"
+            "f792\n-----END CERTIFICATE-----\n"
+        )
+
+        fd_mock = mock.MagicMock(spec=io.BytesIO)
+        open_mock.return_value = fd_mock
+        fd_mock.__enter__.return_value = fd_mock
+        fd_mock.read.return_value = data
+
+        decode_calls = [
+            mock.call('MIID7TCCFg879'),
+            mock.call('KHY8UPGHf792')
+        ]
+        load_cert_calls = [
+            mock.call(redfish.FILETYPE_ASN1, 'first decoded data'),
+            mock.call(redfish.FILETYPE_ASN1, 'second decoded data')
+        ]
+        cert_file = '/path/to/certfile'
+        self.rf_client.remove_tls_certificate([cert_file])
+        decode_mock.assert_has_calls(decode_calls)
+        load_cert_mock.assert_has_calls(load_cert_calls)
+
+        expected_data = {
+            "DeleteCertificates": [
+                {
+                    "FingerPrint": "humptydumpty",
+                },
+                {
+                    "FingerPrint": "hickerydickery"
+                }
+            ]
         }
-        del_cert_list.append(cert_fp)
-        cert.update({"DeleteCertificates": del_cert_list})
-        self.rf_client.remove_tls_certificate([fp])
 
         (get_sushy_system_mock.return_value.
          bios_settings.tls_config.tls_config_settings.
-         remove_tls_certificate.assert_called_once_with(cert))
+         remove_tls_certificate.assert_called_once_with(expected_data))
+
+    @mock.patch.object(redfish, 'load_certificate')
+    @mock.patch.object(redfish, 'b64decode')
+    @mock.patch.object(builtins, 'open')
+    @mock.patch.object(redfish.RedfishOperations, '_is_boot_mode_uefi')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_remove_tls_certificate_no_certificate(self,
+                                                   get_sushy_system_mock,
+                                                   _uefi_boot_mode_mock,
+                                                   open_mock, decode_mock,
+                                                   load_cert_mock):
+
+        _uefi_boot_mode_mock.return_value = True
+
+        data = (
+            "-----UNFORMATED CERTIFICATE-----\nMIID7TC\nCF"
+            "g879\n-----END CERTIFICATE-----\n"
+            "-----UNFORMATED CERTIFICATE-----\nKHY8UP\nGH"
+            "f792\n-----END CERTIFICATE-----\n"
+        )
+
+        fd_mock = mock.MagicMock(spec=io.BytesIO)
+        open_mock.return_value = fd_mock
+        fd_mock.__enter__.return_value = fd_mock
+        fd_mock.read.return_value = data
+
+        cert_file = '/path/to/certfile'
+
+        self.assertRaisesRegex(
+            exception.IloError,
+            "No valid certificate",
+            self.rf_client.remove_tls_certificate, [cert_file])
+
+        decode_mock.assert_not_called()
+        load_cert_mock.assert_not_called()
+
+        (get_sushy_system_mock.return_value.
+         bios_settings.tls_config.tls_config_settings.
+         remove_tls_certificate.assert_not_called())
+
+    @mock.patch.object(redfish, 'load_certificate')
+    @mock.patch.object(redfish, 'b64decode')
+    @mock.patch.object(builtins, 'open')
+    @mock.patch.object(redfish.RedfishOperations, '_is_boot_mode_uefi')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_remove_tls_certificate_raises_ilo_error(self,
+                                                     get_sushy_system_mock,
+                                                     _uefi_boot_mode_mock,
+                                                     open_mock, decode_mock,
+                                                     load_cert_mock):
+        _uefi_boot_mode_mock.return_value = True
+        decode_mock.side_effect = ['first decoded data',
+                                   'second decoded data']
+        cert1_mock = mock.MagicMock()
+        cert2_mock = mock.MagicMock()
+        load_cert_mock.side_effect = [cert1_mock, cert2_mock]
+        cert1_mock.digest.return_value.decode.return_value = "humptydumpty"
+        cert2_mock.digest.return_value.decode.return_value = "hickerydickery"
+
+        data = (
+            "-----BEGIN CERTIFICATE-----\nMIID7TC\nCF"
+            "g879\n-----END CERTIFICATE-----\n"
+            "-----BEGIN CERTIFICATE-----\nKHY8UP\nGH"
+            "f792\n-----END CERTIFICATE-----\n"
+        )
+
+        fd_mock = mock.MagicMock(spec=io.BytesIO)
+        open_mock.return_value = fd_mock
+        fd_mock.__enter__.return_value = fd_mock
+        fd_mock.read.return_value = data
+
+        cert_file = '/path/to/certfile'
+        (get_sushy_system_mock.return_value.
+         bios_settings.tls_config.tls_config_settings.
+         remove_tls_certificate.side_effect) = (
+             sushy.exceptions.SushyError)
+
+        self.assertRaisesRegex(
+            exception.IloError,
+            'The Redfish controller has failed to remove TLS certificate.',
+            self.rf_client.remove_tls_certificate, [cert_file])
 
     @mock.patch.object(redfish.RedfishOperations, '_is_boot_mode_uefi')
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
