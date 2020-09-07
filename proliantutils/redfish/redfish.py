@@ -660,7 +660,204 @@ class RedfishOperations(operations.IloOperations):
             LOG.debug(msg)
             raise exception.IloError(msg)
 
-    def _get_security_dashboard_values(self):
+    def _update_security_parameter(self, sec_param, ignore=False):
+        """Sets the ignore flag for the security parameter.
+
+        :param sec_param: Name of the security parameter.
+        :param ignore : True when security parameter needs to be ignored.
+               If passed False, security param will not be ignored.
+               If nothing passed default will be False.
+        """
+        sushy_manager = self._get_sushy_manager(PROLIANT_MANAGER_ID)
+        try:
+            security_params = (
+                sushy_manager.securityservice.securityparamscollectionuri)
+            param_members = security_params.get_members()
+            for param in param_members:
+                if sec_param in param.name:
+                    param.update_security_param_ignore_status(ignore)
+                    break
+            else:
+                msg = (self._('Specified parameter "%(param)s" is not '
+                              'a Security Dashboard Parameter.') %
+                       {'param': sec_param})
+                raise exception.IloInvalidInputError(msg)
+        except sushy.exceptions.SushyError as e:
+            msg = (self._("The Redfish controller is unable to update "
+                          "resource or its member. Error "
+                          "%(error)s)") % {'error': str(e)})
+            LOG.debug(msg)
+            raise exception.IloError(msg)
+
+    def update_password_complexity(self, enable=True, ignore=False):
+        """Update the Password_Complexity security param.
+
+        :param enable: A boolean param, True when Password_Complexity needs
+               to be enabled. If passed False, Password_Complexity security
+               param will be disabled. If nothing passed default will be True.
+        :param ignore : A boolean param, True when Password_Complexity needs
+               to be ignored. If passed False, Password_Complexity security
+               param will not be ignored. If nothing passed default will be
+               False.
+        :raises: IloError, on an error from iLO.
+        """
+        acc_service = self._sushy.get_account_service()
+        try:
+            self._update_security_parameter(sec_param="Password Complexity",
+                                            ignore=ignore)
+            acc_service.update_enforce_passwd_complexity(enable)
+        except sushy.exceptions.SushyError as e:
+            msg = (self._('The Redfish controller failed to update the '
+                          'security dashboard parameter '
+                          '``Password_Complexity``. '
+                          'Error %(error)s') % {'error': str(e)})
+            LOG.debug(msg)
+            raise exception.IloError(msg)
+
+    def update_require_login_for_ilo_rbsu(self, enable=True, ignore=False):
+        """Update the RequiredLoginForiLORBSU security param.
+
+        :param enable: A boolean param, True when RequiredLoginForiLORBSU
+               needs to be enabled. If passed False, RequiredLoginForiLORBSU
+               security param will be disabled. If nothing passed default
+               will be True.
+        :param ignore : A boolean param, True when RequiredLoginForiLORBSU
+               needs to be ignored. If passed False, RequiredLoginForiLORBSU
+               security param will not be ignored. If nothing passed default
+               will be False.
+        :raises: IloError, on an error from iLO.
+        """
+        sushy_manager = self._get_sushy_manager(PROLIANT_MANAGER_ID)
+        try:
+            self._update_security_parameter(sec_param="Require Login",
+                                            ignore=ignore)
+            sushy_manager.update_login_for_ilo_rbsu(enable)
+        except sushy.exceptions.SushyError as e:
+            msg = (self._('The Redfish controller failed to update the '
+                          'security dashboard parameter '
+                          '``RequiredLoginForiLORBSU``. '
+                          'Error %(error)s') % {'error': str(e)})
+            LOG.debug(msg)
+            raise exception.IloError(msg)
+
+    def update_require_host_authentication(self, enable=True, ignore=False):
+        """Update the RequireHostAuthentication security param.
+
+        :param enable: A boolean param, True when RequireHostAuthentication
+               needs to be enabled. If passed False, RequireHostAuthentication
+               security param will be disabled. If nothing passed
+               default will be True.
+        :param ignore : A boolean param, True when RequireHostAuthentication
+               needs to be ignored. If passed False, RequireHostAuthentication
+               security param will not be ignored. If nothing passed
+               default will be False.
+        :raises: IloError, on an error from iLO.
+        """
+        sushy_manager = self._get_sushy_manager(PROLIANT_MANAGER_ID)
+        try:
+            self._update_security_parameter(sec_param="Host Authentication",
+                                            ignore=ignore)
+            sushy_manager.update_host_authentication(enable)
+        except sushy.exceptions.SushyError as e:
+            msg = (self._('The Redfish controller failed to update the '
+                          'security dashboard paramater '
+                          '``RequireHostAuthentication``. '
+                          'Error %(error)s') % {'error': str(e)})
+            LOG.debug(msg)
+            raise exception.IloError(msg)
+
+    def update_minimum_password_length(self, passwd_length=None, ignore=False):
+        """Update the MinPasswordLength security param.
+
+        :param passwd_length: Minimum lenght of password used. If nothing
+               passed default will be None.
+        :param ignore : A boolean param, True when MinPasswordLength needs to
+               be ignored. If passed False, MinPasswordLength security param
+               will not be ignored. If nothing passed default will be False.
+        """
+        acc_service = self._sushy.get_account_service()
+        try:
+            self._update_security_parameter(sec_param="Minimum",
+                                            ignore=ignore)
+            acc_service.update_min_passwd_length(passwd_length)
+        except sushy.exceptions.SushyError as e:
+            msg = (self._('The Redfish controller failed to update the '
+                          'security dashboard paramater '
+                          '``MinPasswordLength``. '
+                          'Error %(error)s') % {'error': str(e)})
+            LOG.debug(msg)
+            raise exception.IloError(msg)
+
+    def update_ipmi_over_lan(self, enable=False, ignore=False):
+        """Update the IPMI/DCMI_Over_LAN security param.
+
+        :param enable: A boolean param, True when IPMI/DCMI_Over_LAN needs to
+               be enabled. If passed False, IPMI/DCMI_Over_LAN security param
+               will be disabled. If nothing passed default will be False.
+        :param ignore : A boolean param, True when IPMI/DCMI_Over_LAN needs to
+               be ignored. If passed False, IPMI/DCMI_Over_LAN security param
+               will not be ignored. If nothing passed default will be False.
+        :raises: IloError, on an error from iLO.
+        """
+        sushy_manager = self._get_sushy_manager(PROLIANT_MANAGER_ID)
+        try:
+            self._update_security_parameter(sec_param="IPMI", ignore=ignore)
+            sushy_manager.networkprotocol.update_ipmi_enabled(enable)
+        except sushy.exceptions.SushyError as e:
+            msg = (self._('The Redfish controller failed to update the '
+                          'security dashboard paramater '
+                          '``IPMI/DCMI_Over_LAN``. '
+                          'Error %(error)s') % {'error': str(e)})
+            LOG.debug(msg)
+            raise exception.IloError(msg)
+
+    def update_authentication_failure_logging(self, logging_threshold=None,
+                                              ignore=False):
+        """Update the Authentication_failure_Logging security param.
+
+        :param logging_threshold: Value of authenication failure logging
+               threshold. If nothing passed default will be None.
+        :param ignore : A boolean param, True when
+               Authentication_failure_Logging needs to be ignored. If passed
+               False, Authentication_failure_Logging security param will not
+               be ignored. If nothing passed default will be False.
+        :raises: IloError, on an error from iLO.
+        """
+        acc_service = self._sushy.get_account_service()
+        try:
+            self._update_security_parameter(sec_param="Failure Logging",
+                                            ignore=ignore)
+            acc_service.update_auth_failure_logging(logging_threshold)
+        except sushy.exceptions.SushyError as e:
+            msg = (self._('The Redfish controller failed to update the '
+                          'security dashboard paramater '
+                          '``Authentication_failure_Logging``. '
+                          'Error %(error)s') % {'error': str(e)})
+            LOG.debug(msg)
+            raise exception.IloError(msg)
+
+    def update_secure_boot(self, enable=True, ignore=False):
+        """Update Secure_Boot security param on the server.
+
+        :param enable: A boolean param, True when Secure_Boot needs to be
+               enabled. If passed False, Secure_Boot security param will
+               be disabled. If nothing passed default will be True.
+        :param ignore : A boolean param, True when Secure_boot needs to be
+               ignored. If passed False, Secure_boot security param will
+               not be ignored. If nothing passed default will be False.
+        """
+        try:
+            self._update_security_parameter(sec_param="Secure Boot",
+                                            ignore=ignore)
+            self.set_secure_boot_mode(enable)
+        except sushy.exceptions.SushyError as e:
+            msg = (self._('The Redfish controller failed to update the '
+                          'security dashboard paramater ``Secure_boot``. '
+                          'Error %(error)s') % {'error': str(e)})
+            LOG.debug(msg)
+            raise exception.IloError(msg)
+
+    def get_security_dashboard_values(self):
         """Gets all the parameters related to security dashboard.
 
         :return: a dictionary of the security dashboard values
@@ -672,7 +869,6 @@ class RedfishOperations(operations.IloOperations):
         sec_capabilities = {}
         sushy_manager = self._get_sushy_manager(PROLIANT_MANAGER_ID)
         try:
-
             security_dashboard = (
                 sushy_manager.securityservice.securitydashboard)
             security_params = (
@@ -712,7 +908,7 @@ class RedfishOperations(operations.IloOperations):
         :returns: a dictionary of only those security parameters and their
             security status which are applicable for ironic.
         """
-        values = self._get_security_dashboard_values()
+        values = self.get_security_dashboard_values()
         ironic_sec_capabilities = {}
         ironic_sec_capabilities.update(
             {'overall_security_status': values.get('overall_security_status')})

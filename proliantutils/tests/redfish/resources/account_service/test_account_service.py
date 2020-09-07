@@ -67,3 +67,21 @@ class HPEAccountServiceTestCase(testtools.TestCase):
         self.assertIsInstance(self.acc_inst.accounts,
                               account.HPEAccountCollection)
         self.assertFalse(accounts._is_stale)
+
+    def test_update_min_passwd_length(self):
+        self.acc_inst.update_min_passwd_length(passwd_length=10)
+        data = {"Oem": {"Hpe": {"MinPasswordLength": 10}}}
+        self.acc_inst._conn.patch.assert_called_once_with(
+            '/redfish/v1/AccountService', data=data)
+
+    def test_update_enforce_passwd_complexity(self):
+        self.acc_inst.update_enforce_passwd_complexity(enable=True)
+        data = {"Oem": {"Hpe": {"EnforcePasswordComplexity": True}}}
+        self.acc_inst._conn.patch.assert_called_once_with(
+            '/redfish/v1/AccountService', data=data)
+
+    def test_update_auth_failure_logging(self):
+        self.acc_inst.update_auth_failure_logging(logging_threshold=2)
+        data = {"Oem": {"Hpe": {"AuthFailureLoggingThreshold": 2}}}
+        self.acc_inst._conn.patch.assert_called_once_with(
+            '/redfish/v1/AccountService', data=data)

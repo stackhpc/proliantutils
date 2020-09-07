@@ -227,3 +227,8 @@ class RedfishError(ProliantUtilsException):
 class MissingAttributeError(RedfishError):
     message = ('The attribute %(attribute)s is missing from the '
                'resource %(resource)s')
+
+
+class InvalidParameterValueError(RedfishError):
+    message = ('The parameter "%(parameter)s" value "%(value)s" is invalid. '
+               'Valid values are: %(valid_values)s')

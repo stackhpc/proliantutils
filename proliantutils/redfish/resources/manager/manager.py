@@ -14,9 +14,12 @@
 
 __author__ = 'HPE'
 
+from sushy.resources import base
 from sushy.resources.manager import manager
 from sushy import utils as sushy_utils
 
+from proliantutils import exception
+from proliantutils.redfish.resources.manager import network_protocol
 from proliantutils.redfish.resources.manager import security_service
 from proliantutils.redfish.resources.manager import virtual_media
 from proliantutils.redfish import utils
@@ -28,6 +31,10 @@ class HPEManager(manager.Manager):
     This class extends the functionality of Manager resource class
     from sushy
     """
+    required_login_foriLORBSU = base.Field(
+        ["Oem", "Hpe", "RequiredLoginForiLORBSU"])
+    require_host_authentication = base.Field(
+        ["Oem", "Hpe", "RequireHostAuthentication"])
 
     def set_license(self, key):
         """Set the license on a redfish system
@@ -58,3 +65,30 @@ class HPEManager(manager.Manager):
             self._conn, utils.get_subresource_path_by(
                 self, ['Oem', 'Hpe', 'Links', 'SecurityService']),
             redfish_version=self.redfish_version)
+
+    @property
+    @sushy_utils.cache_it
+    def networkprotocol(self):
+        return network_protocol.NetworkProtocol(
+            self._conn, utils.get_subresource_path_by(self, 'NetworkProtocol'),
+            redfish_version=self.redfish_version)
+
+    def update_login_for_ilo_rbsu(self, enable):
+        if not isinstance(enable, bool):
+            msg = ('The parameter "%(parameter)s" value "%(value)s" is '
+                   'invalid. Valid values are: True/False.' %
+                   {'parameter': 'enable', 'value': enable})
+            raise exception.InvalidInputError(msg)
+
+        data = {"Oem": {"Hpe": {"RequiredLoginForiLORBSU": enable}}}
+        self._conn.patch(self.path, data=data)
+
+    def update_host_authentication(self, enable):
+        if not isinstance(enable, bool):
+            msg = ('The parameter "%(parameter)s" value "%(value)s" is '
+                   'invalid. Valid values are: True/False.' %
+                   {'parameter': 'enable', 'value': enable})
+            raise exception.InvalidInputError(msg)
+
+        data = {"Oem": {"Hpe": {"RequireHostAuthentication": enable}}}
+        self._conn.patch(self.path, data=data)
