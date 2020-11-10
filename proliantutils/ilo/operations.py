@@ -558,7 +558,7 @@ class IloOperations(object):
         """
         raise exception.IloCommandNotSupportedError(ERRMSG)
 
-    def remove_tls_certificate(self, cert_file_list):
+    def remove_tls_certificate(self, cert_file_list=[]):
         """Removes the TLS certificate from the iLO
 
         :param cert_file_list: List of TLS certificate files

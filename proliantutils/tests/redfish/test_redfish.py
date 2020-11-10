@@ -42,6 +42,7 @@ from proliantutils.redfish.resources.system.storage import array_controller
 from proliantutils.redfish.resources.system.storage \
     import common as common_storage
 from proliantutils.redfish.resources.system import system as pro_sys
+from proliantutils.redfish.resources.system import tls_config
 
 
 @ddt.ddt
@@ -2303,8 +2304,43 @@ class RedfishOperationsTestCase(testtools.TestCase):
 
         self.assertRaisesRegex(
             exception.IloCommandNotSupportedInBiosError,
-            'TLS certificate cannot be removed in BIOS boot mode',
+            'TLS certificates cannot be removed in BIOS boot mode',
             self.rf_client.remove_tls_certificate, fp)
+
+    @mock.patch.object(redfish, 'load_certificate')
+    @mock.patch.object(redfish, 'b64decode')
+    @mock.patch.object(redfish.RedfishOperations, '_is_boot_mode_uefi')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
+    def test_remove_tls_certificate_default(self, get_sushy_system_mock,
+                                            _uefi_boot_mode_mock, decode_mock,
+                                            load_cert_mock):
+        _uefi_boot_mode_mock.return_value = True
+        with open('proliantutils/tests/redfish/'
+                  'json_samples/tls_config.json', 'r') as f:
+            jsonval = json.loads(f.read())
+        tlsconfig_mock = mock.MagicMock(spec=tls_config.TLSConfig)
+
+        tls_mock = mock.PropertyMock(return_value=tlsconfig_mock)
+
+        type(get_sushy_system_mock.return_value.bios_settings).tls_config = (
+            tls_mock)
+        certificates = jsonval.get('Certificates')
+        certs_mock = mock.PropertyMock(return_value=certificates)
+        type(tlsconfig_mock).tls_certificates = certs_mock
+        del_cert_list = []
+        for cert in certificates:
+            fp = cert.get("FingerPrint")
+            cert_fp = {
+                "FingerPrint": fp
+            }
+            del_cert_list.append(cert_fp)
+        self.rf_client.remove_tls_certificate()
+        (get_sushy_system_mock.return_value.
+         bios_settings.tls_config.tls_config_settings.
+         remove_tls_certificate.assert_called_once_with(
+             {'DeleteCertificates': del_cert_list}))
+        decode_mock.assert_not_called()
+        load_cert_mock.assert_not_called()
 
     @mock.patch.object(redfish.RedfishOperations,
                        '_get_security_dashboard_values')

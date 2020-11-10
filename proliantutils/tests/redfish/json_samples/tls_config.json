@@ -21,6 +21,22 @@
         "@odata.type": "#HpeTlsConfig.v1_0_0.HpeTlsConfig",
         "Certificates":
         [
+	        {
+	            "FingerPrint": "1C:E7:B2:FD:9F:CB:14:EB:74:3F:EF:39:CC:81:DB:36:28:EF:D3:83:CD:B7:B3:63:7A:DB:C1:82:9A:84:A8:20",
+	            "Issuer": "C=AU, ST=Some-State, O=Internet Widgits Pty Ltd",
+	            "SerialNumber": "BD96C593395EA98",
+	            "Subject": "C=AU, ST=Some-State, O=Internet Widgits Pty Ltd",
+	            "ValidNotAfter": "02/23/2019  04:34",
+	            "ValidNotBefore": "02/23/2018  04:34"
+	        },
+		    {
+	            "FingerPrint": "FA:3A:68:C7:7E:ED:90:21:D2:FA:3E:54:6B:0C:14:D3:2F:8D:43:50:F7:05:A7:0F:1C:68:35:DB:5C:D2:53:28",
+	            "Issuer": "C=IN, ST=Karnataka, L=Bengaluru, O=HPE, OU=BCOS, CN=Vinay Muddu, emailAddress=vinay.m.kumar@hpe.com",
+	            "SerialNumber": "92DF813625F950E5",
+	            "Subject": "C=IN, ST=Karnataka, L=Bengaluru, O=HPE, OU=BCOS, CN=Vinay Muddu, emailAddress=vinay.m.kumar@hpe.com",
+	            "ValidNotAfter": "06/08/2021  06:40",
+	            "ValidNotBefore": "06/08/2020  06:40"
+	        }
         ],
         "Ciphers": "AES128-SHA:AES256-SHA:AES128-SHA256:AES256-SHA256:AES128-GCM-SHA256:AES256-GCM-SHA384",
         "DeleteCertificates":

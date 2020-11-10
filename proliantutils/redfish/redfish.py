@@ -1470,7 +1470,7 @@ class RedfishOperations(operations.IloOperations):
             msg = 'TLS certificate cannot be upload in BIOS boot mode'
             raise exception.IloCommandNotSupportedInBiosError(msg)
 
-    def remove_tls_certificate(self, cert_file_list):
+    def remove_tls_certificate(self, cert_file_list=[]):
         """Removes the TLS certificate from the iLO.
 
         :param cert_file_list: List of TLS certificate files
@@ -1481,9 +1481,24 @@ class RedfishOperations(operations.IloOperations):
         """
         sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
 
-        if(self._is_boot_mode_uefi()):
-            cert_dict = {}
-            del_cert_list = []
+        if not self._is_boot_mode_uefi():
+            msg = 'TLS certificates cannot be removed in BIOS boot mode'
+            raise exception.IloCommandNotSupportedInBiosError(msg)
+
+        cert_dict = {}
+        del_cert_list = []
+
+        if not cert_file_list:
+            tls_certificates = (sushy_system.bios_settings.tls_config.
+                                tls_certificates)
+            for cert in tls_certificates:
+                fp = cert.get("FingerPrint")
+                cert_fp = {
+                    "FingerPrint": fp
+                }
+                del_cert_list.append(cert_fp)
+
+        else:
             for cert_file in cert_file_list:
                 with open(cert_file, 'r') as f:
                     data = json.dumps(f.read())
@@ -1515,22 +1530,19 @@ class RedfishOperations(operations.IloOperations):
                             }
                             del_cert_list.append(cert_fp)
 
-            if len(del_cert_list) == 0:
-                msg = (self._("No valid certificate in %(cert_file_list)s.") %
-                       {"cert_file_list": cert_file_list})
-                raise exception.IloError(msg)
+        if len(del_cert_list) == 0:
+            msg = (self._("No valid certificate in %(cert_file_list)s.") %
+                   {"cert_file_list": cert_file_list})
+            raise exception.IloError(msg)
 
-            cert_dict.update({"DeleteCertificates": del_cert_list})
+        cert_dict.update({"DeleteCertificates": del_cert_list})
 
-            try:
-                (sushy_system.bios_settings.tls_config.
-                 tls_config_settings.remove_tls_certificate(cert_dict))
-            except sushy.exceptions.SushyError as e:
-                msg = (self._("The Redfish controller has failed to remove "
-                              "TLS certificate. Error %(error)s") %
-                       {'error': str(e)})
-                LOG.debug(msg)
-                raise exception.IloError(msg)
-        else:
-            msg = 'TLS certificate cannot be removed in BIOS boot mode'
-            raise exception.IloCommandNotSupportedInBiosError(msg)
+        try:
+            (sushy_system.bios_settings.tls_config.
+             tls_config_settings.remove_tls_certificate(cert_dict))
+        except sushy.exceptions.SushyError as e:
+            msg = (self._("The Redfish controller has failed to remove "
+                          "TLS certificate. Error %(error)s") %
+                   {'error': str(e)})
+            LOG.debug(msg)
+            raise exception.IloError(msg)

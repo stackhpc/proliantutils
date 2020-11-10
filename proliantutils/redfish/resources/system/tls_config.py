@@ -25,6 +25,9 @@ class TLSConfig(base.ResourceBase):
     from sushy.
     """
 
+    tls_certificates = base.Field('Certificates')
+    """The certificates currently configured"""
+
     @property
     @sushy_utils.cache_it
     def tls_config_settings(self):

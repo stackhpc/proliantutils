@@ -905,7 +905,7 @@ class IloClient(operations.IloOperations):
         """
         return self._call_method('add_tls_certificate', cert_file_list)
 
-    def remove_tls_certificate(self, cert_file_list):
+    def remove_tls_certificate(self, cert_file_list=[]):
         """Removes the TLS certificate from the iLO
 
         :param cert_file_list: List of TLS certificate files
