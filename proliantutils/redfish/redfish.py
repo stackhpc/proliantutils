@@ -31,6 +31,7 @@ from proliantutils.ilo import firmware_controller
 from proliantutils.ilo import operations
 from proliantutils import log
 from proliantutils.redfish import main
+from proliantutils.redfish.resources import gpu_common
 from proliantutils.redfish.resources.manager import constants as mgr_cons
 from proliantutils.redfish.resources.system import constants as sys_cons
 from proliantutils.redfish.resources.system.storage \
@@ -101,6 +102,7 @@ GET_POST_STATE_MAP = {
 # collection, as we are dealing with iLO's here.
 PROLIANT_MANAGER_ID = '1'
 PROLIANT_SYSTEM_ID = '1'
+PROLIANT_CHASSIS_ID = '1'
 
 BOOT_OPTION_MAP = {'BOOT_ONCE': True,
                    'BOOT_ALWAYS': False,
@@ -211,6 +213,24 @@ class RedfishOperations(operations.IloOperations):
             msg = (self._('The Redfish Manager "%(manager)s" was not found. '
                           'Error %(error)s') %
                    {'manager': manager_id, 'error': str(e)})
+            LOG.debug(msg)
+            raise exception.IloError(msg)
+
+    def _get_sushy_chassis(self, chassis_id):
+        """Get the sushy chassis for chassis_id
+
+        :param chassis_id: The identity of the Chassis resource
+        :returns: the Sushy Chassis instance
+        :raises: IloError
+        """
+        chassis_url = parse.urljoin(self._sushy.get_chassis_collection_path(),
+                                    chassis_id)
+        try:
+            return self._sushy.get_chassis(chassis_url)
+        except sushy.exceptions.SushyError as e:
+            msg = (self._('The Redfish Chassis "%(chassis)s" was not found. '
+                          'Error %(error)s') %
+                   {'chassis': chassis_id, 'error': str(e)})
             LOG.debug(msg)
             raise exception.IloError(msg)
 
@@ -732,9 +752,9 @@ class RedfishOperations(operations.IloOperations):
         raises: IloError on an error from iLO.
         """
         capabilities = {}
-
         sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
         sushy_manager = self._get_sushy_manager(PROLIANT_MANAGER_ID)
+        sushy_chassis = self._get_sushy_chassis(PROLIANT_CHASSIS_ID)
         try:
             count = len(sushy_system.pci_devices.gpu_devices)
             boot_mode = rf_utils.get_supported_boot_mode(
@@ -797,6 +817,12 @@ class RedfishOperations(operations.IloOperations):
                      json.dumps(memory_data.has_nvdimm_n)),
                      'logical_nvdimm_n': (
                      json.dumps(memory_data.has_logical_nvdimm_n))})
+
+            gpu_capabilities = gpu_common.gpu_capabilities(sushy_system,
+                                                           sushy_chassis)
+            for member in gpu_capabilities:
+                for key in member:
+                    capabilities.update(member.get(key))
 
             capabilities.update(
                 self._parse_security_dashboard_values_for_capabilities())

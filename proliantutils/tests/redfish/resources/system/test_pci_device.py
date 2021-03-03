@@ -99,7 +99,10 @@ class PCIDeviceCollectionTestCase(testtools.TestCase):
         with open(path, 'r') as f:
             val.append(json.loads(f.read()))
         self.conn.get.return_value.json.side_effect = val
-        self.assertEqual(1, len(self.sys_pci_col.gpu_devices))
+        expected = ["/redfish/v1/Systems/1/PCIDevices/6/"]
+        actual = self.sys_pci_col.gpu_devices
+        self.assertEqual(1, len(actual))
+        self.assertEqual(expected, actual)
 
     def test_max_nic_capacity(self):
         self.conn.get.return_value.json.reset_mock()
@@ -116,3 +119,19 @@ class PCIDeviceCollectionTestCase(testtools.TestCase):
         actual_capacity = self.sys_pci_col.max_nic_capacity
         expected = '1Gb'
         self.assertEqual(expected, actual_capacity)
+
+    def test_vendor_id(self):
+        self.conn.get.return_value.json.reset_mock()
+        val = []
+        path = ('proliantutils/tests/redfish/json_samples/'
+                'pci_device.json')
+        with open(path, 'r') as f:
+            val.append(json.loads(f.read()))
+        path = ('proliantutils/tests/redfish/json_samples/'
+                'pci_device1.json')
+        with open(path, 'r') as f:
+            val.append(json.loads(f.read()))
+        self.conn.get.return_value.json.side_effect = val
+        expected_vendor_id = {'6': 4139}
+        self.assertEqual(expected_vendor_id,
+                         self.sys_pci_col.vendor_id)

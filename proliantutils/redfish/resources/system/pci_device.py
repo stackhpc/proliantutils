@@ -33,6 +33,10 @@ class PCIDevice(base.ResourceBase):
 
     sub_class_code = base.Field('SubclassCode')
 
+    odata_id = base.Field('@odata.id')
+
+    vendor_id = base.Field('VendorID')
+
     @property
     @sushy_utils.cache_it
     def nic_capacity(self):
@@ -52,11 +56,12 @@ class PCIDeviceCollection(base.ResourceCollectionBase):
     @property
     @sushy_utils.cache_it
     def gpu_devices(self):
+        """Returns the list of gpu devices uris"""
         gpu_devices = []
         for member in self.get_members():
             if member.class_code in CLASSCODE_FOR_GPU_DEVICES:
                 if member.sub_class_code in SUBCLASSCODE_FOR_GPU_DEVICES:
-                    gpu_devices.append(member)
+                    gpu_devices.append(member.odata_id)
         return gpu_devices
 
     @property
@@ -64,3 +69,13 @@ class PCIDeviceCollection(base.ResourceCollectionBase):
     def max_nic_capacity(self):
         """Gets the maximum NIC capacity"""
         return str(max([m.nic_capacity for m in self.get_members()])) + 'Gb'
+
+    @property
+    @sushy_utils.cache_it
+    def vendor_id(self):
+        """Returns the vendor_id dictionary"""
+        vendor_id = {}
+        for member in self.get_members():
+            if member.odata_id in self.gpu_devices:
+                vendor_id.update({member.identity: member.vendor_id})
+        return vendor_id

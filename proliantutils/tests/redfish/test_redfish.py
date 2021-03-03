@@ -31,6 +31,7 @@ from proliantutils.redfish import main
 from proliantutils.redfish import redfish
 from proliantutils.redfish.resources.account_service import account
 from proliantutils.redfish.resources.account_service import account_service
+from proliantutils.redfish.resources import gpu_common as common_gpu
 from proliantutils.redfish.resources.manager import manager
 from proliantutils.redfish.resources.manager import virtual_media
 from proliantutils.redfish.resources.system import bios
@@ -692,6 +693,8 @@ class RedfishOperationsTestCase(testtools.TestCase):
             'The Redfish controller failed to get the supported boot modes.',
             self.rf_client.get_supported_boot_mode)
 
+    @mock.patch.object(common_gpu, 'gpu_capabilities')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_chassis')
     @mock.patch.object(redfish.RedfishOperations,
                        '_parse_security_dashboard_values_for_capabilities')
     @mock.patch.object(common_storage, 'get_drive_rotational_speed_rpm')
@@ -702,7 +705,8 @@ class RedfishOperationsTestCase(testtools.TestCase):
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
     def test_get_server_capabilities(self, get_manager_mock, get_system_mock,
                                      ssd_mock, rotational_mock,
-                                     nvme_mock, speed_mock, sec_mock):
+                                     nvme_mock, speed_mock, sec_mock,
+                                     get_chassis_mock, gpu_cap_mock):
         type(get_system_mock.return_value.pci_devices).gpu_devices = (
             [mock.MagicMock(spec=pci_device.PCIDevice)])
         type(get_system_mock.return_value.bios_settings).sriov = (
@@ -749,6 +753,10 @@ class RedfishOperationsTestCase(testtools.TestCase):
         sec_mock.return_value = {'overall_security_status': 'Risk',
                                  'security_override_switch': 'Ok',
                                  'last_firmware_scan_result': 'Ok'}
+        gpu_cap_mock.return_value = (
+            [{'gpu_vendor_count': {'gpu_0x102b_count': 1}},
+             {'gpu_ven_dev_count': {'gpu_Embedded_Video_Controller_count': 1}},
+             {'gpu_ven_dev': {'gpu_Embedded_Video_Controller': 'true'}}])
         actual = self.rf_client.get_server_capabilities()
         expected = {'pci_gpu_devices': 1, 'sriov_enabled': 'true',
                     'secure_boot': 'true', 'cpu_vt': 'true',
@@ -772,9 +780,14 @@ class RedfishOperationsTestCase(testtools.TestCase):
                     'drive_rotational_15000_rpm': 'true',
                     'overall_security_status': 'Risk',
                     'security_override_switch': 'Ok',
-                    'last_firmware_scan_result': 'Ok'}
+                    'last_firmware_scan_result': 'Ok',
+                    'gpu_0x102b_count': 1,
+                    'gpu_Embedded_Video_Controller_count': 1,
+                    'gpu_Embedded_Video_Controller': 'true'}
         self.assertEqual(expected, actual)
 
+    @mock.patch.object(common_gpu, 'gpu_capabilities')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_chassis')
     @mock.patch.object(redfish.RedfishOperations,
                        '_parse_security_dashboard_values_for_capabilities')
     @mock.patch.object(common_storage, 'get_drive_rotational_speed_rpm')
@@ -785,7 +798,8 @@ class RedfishOperationsTestCase(testtools.TestCase):
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
     def test_get_server_capabilities_optional_capabilities_absent(
             self, get_manager_mock, get_system_mock, ssd_mock,
-            rotational_mock, nvme_mock, speed_mock, sec_mock):
+            rotational_mock, nvme_mock, speed_mock, sec_mock,
+            get_chassis_mock, gpu_cap_mock):
         type(get_system_mock.return_value.pci_devices).gpu_devices = (
             [mock.MagicMock(spec=pci_device.PCIDevice)])
         type(get_system_mock.return_value.bios_settings).sriov = (
@@ -833,6 +847,10 @@ class RedfishOperationsTestCase(testtools.TestCase):
         sec_mock.return_value = {'overall_security_status': 'Risk',
                                  'security_override_switch': 'Ok',
                                  'last_firmware_scan_result': 'Ok'}
+        gpu_cap_mock.return_value = (
+            [{'gpu_vendor_count': {'gpu_0x102b_count': 1}},
+             {'gpu_ven_dev_count': {'gpu_Embedded_Video_Controller_count': 1}},
+             {'gpu_ven_dev': {'gpu_Embedded_Video_Controller': 'true'}}])
         actual = self.rf_client.get_server_capabilities()
         expected = {'pci_gpu_devices': 1,
                     'rom_firmware_version': 'U31 v1.00 (03/11/2017)',
@@ -842,13 +860,20 @@ class RedfishOperationsTestCase(testtools.TestCase):
                     'boot_mode_bios': 'false', 'boot_mode_uefi': 'true',
                     'overall_security_status': 'Risk',
                     'security_override_switch': 'Ok',
-                    'last_firmware_scan_result': 'Ok'}
+                    'last_firmware_scan_result': 'Ok',
+                    'gpu_0x102b_count': 1,
+                    'gpu_Embedded_Video_Controller_count': 1,
+                    'gpu_Embedded_Video_Controller': 'true'}
         self.assertEqual(expected, actual)
 
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_chassis')
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_system')
-    def test_get_server_capabilities_gpu_fail(self, get_system_mock):
+    def test_get_server_capabilities_gpu_fail(self, get_system_mock,
+                                              get_chassis_mock):
         gpu_mock = mock.PropertyMock(side_effect=sushy.exceptions.SushyError)
         type(get_system_mock.return_value.pci_devices).gpu_devices = (
+            gpu_mock)
+        type(get_chassis_mock.return_value.devices).vendor_dict = (
             gpu_mock)
         self.assertRaises(exception.IloError,
                           self.rf_client.get_server_capabilities)

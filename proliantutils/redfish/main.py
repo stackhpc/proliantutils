@@ -18,6 +18,7 @@ import sushy
 
 from proliantutils.redfish import connector as prutils_connector
 from proliantutils.redfish.resources.account_service import account_service
+from proliantutils.redfish.resources.chassis import chassis
 from proliantutils.redfish.resources.manager import manager
 from proliantutils.redfish.resources.system import system
 from proliantutils.redfish.resources import update_service
@@ -107,3 +108,15 @@ class HPESushy(sushy.Sushy):
         return (account_service.
                 HPEAccountService(self._conn, account_service_url,
                                   redfish_version=self.redfish_version))
+
+    def get_chassis_collection_path(self):
+        return utils.get_subresource_path_by(self, 'Chassis')
+
+    def get_chassis(self, identity):
+        """Given the identity return a HPEChassis object
+
+        :param identity: The identity of the Chassis resource
+        :returns: The Chassis object
+        """
+        return chassis.HPEChassis(self._conn, identity,
+                                  redfish_version=self.redfish_version)
