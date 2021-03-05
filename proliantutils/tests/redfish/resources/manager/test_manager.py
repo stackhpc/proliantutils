@@ -85,3 +85,15 @@ class HPEManagerTestCase(testtools.TestCase):
         self.assertIsInstance(self.mgr_inst.virtual_media,
                               virtual_media.VirtualMediaCollection)
         self.assertFalse(actual_vmedia._is_stale)
+
+    def test_update_login_for_ilo_rbsu(self):
+        self.mgr_inst.update_login_for_ilo_rbsu(enable=True)
+        data = {"Oem": {"Hpe": {"RequiredLoginForiLORBSU": True}}}
+        self.mgr_inst._conn.patch.assert_called_once_with(
+            '/redfish/v1/Managers/1', data=data)
+
+    def test_update_host_authentication(self):
+        self.mgr_inst.update_host_authentication(enable=True)
+        data = {"Oem": {"Hpe": {"RequireHostAuthentication": True}}}
+        self.mgr_inst._conn.patch.assert_called_once_with(
+            '/redfish/v1/Managers/1', data=data)

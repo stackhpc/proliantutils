@@ -45,6 +45,14 @@ class SecurityParamsTestCase(testtools.TestCase):
         self.assertEqual("Ok", self.sec_param.status)
         self.assertEqual("Off", self.sec_param.state)
 
+    def test_update_security_param_ignore_status(self):
+        self.sec_param.update_security_param_ignore_status(ignore=False)
+        data = {"Ignore": False}
+        target_uri = ('/redfish/v1/Mangers/1/SecurityService/'
+                      'SecurityDashboard/SecurityParams')
+        self.sec_param._conn.patch.assert_called_once_with(
+            target_uri, data=data)
+
 
 class SecurityParamsCollectionTestCase(testtools.TestCase):
 

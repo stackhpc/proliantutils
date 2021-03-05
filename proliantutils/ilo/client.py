@@ -124,7 +124,15 @@ SUPPORTED_REDFISH_METHODS = [
     'set_http_boot_url',
     'get_http_boot_url',
     'add_tls_certificate',
-    'remove_tls_certificate'
+    'remove_tls_certificate',
+    'get_security_dashboard_values',
+    'update_password_complexity',
+    'update_require_login_for_ilo_rbsu',
+    'update_require_host_authentication',
+    'update_minimum_password_length',
+    'update_ipmi_over_lan',
+    'update_authentication_failure_logging',
+    'update_secure_boot'
 ]
 
 LOG = log.get_logger(__name__)
@@ -912,3 +920,112 @@ class IloClient(operations.IloOperations):
         :raises: IloError, on an error from iLO.
         """
         return self._call_method('remove_tls_certificate', cert_file_list)
+
+    def get_security_dashboard_values(self):
+        """Gets all the parameters related to security dashboard.
+
+        :return: a dictionary of the security dashboard values
+                 with their security status and security parameters
+                 with their complete details and security status.
+        :raises: IloError, if security dashboard or their params
+            not found or on an error from iLO.
+        """
+        return self._call_method('get_security_dashboard_values')
+
+    def update_password_complexity(self, enable=True, ignore=False):
+        """Update the Password_Complexity security param.
+
+        :param enable: A boolean param, True when Password_Complexity needs
+               to be enabled. If passed False, Password_Complexity security
+               param will be disabled. If nothing passed default will be True.
+        :param ignore : A boolean param, True when Password_Complexity needs
+               to be ignored. If passed False, Password_Complexity security
+               param will not be ignored. If nothing passed default will be
+               False.
+        :raises: IloError, on an error from iLO.
+        """
+        return self._call_method('update_password_complexity', enable, ignore)
+
+    def update_require_login_for_ilo_rbsu(self, enable=True, ignore=False):
+        """Update the RequiredLoginForiLORBSU security param.
+
+        :param enable: A boolean param, True when RequiredLoginForiLORBSU
+               needs to be enabled. If passed False, RequiredLoginForiLORBSU
+               security param will be disabled. If nothing passed default
+               will be True.
+        :param ignore : A boolean param, True when RequiredLoginForiLORBSU
+               needs to be ignored. If passed False, RequiredLoginForiLORBSU
+               security param will not be ignored. If nothing passed default
+               will be False.
+        :raises: IloError, on an error from iLO.
+        """
+        return self._call_method('update_require_login_for_ilo_rbsu',
+                                 enable, ignore)
+
+    def update_require_host_authentication(self, enable=True, ignore=False):
+        """Update the RequireHostAuthentication security param.
+
+        :param enable: A boolean param, True when RequireHostAuthentication
+               needs to be enabled. If passed False, RequireHostAuthentication
+               security param will be disabled. If nothing passed
+               default will be True.
+        :param ignore : A boolean param, True when RequireHostAuthentication
+               needs to be ignored. If passed False, RequireHostAuthentication
+               security param will not be ignored. If nothing passed
+               default will be False.
+        :raises: IloError, on an error from iLO.
+        """
+        return self._call_method('update_require_host_authentication',
+                                 enable, ignore)
+
+    def update_minimum_password_length(self, passwd_length=None, ignore=False):
+        """Update the MinPasswordLength security param.
+
+        :param passwd_length: Minimum length of password used. If nothing
+               passed default will be None.
+        :param ignore : A boolean param, True when MinPasswordLength needs to
+               be ignored. If passed False, MinPasswordLength security param
+               will not be ignored. If nothing passed default will be False.
+        """
+        return self._call_method('update_minimum_password_length',
+                                 passwd_length, ignore)
+
+    def update_ipmi_over_lan(self, enable=False, ignore=False):
+        """Update the IPMI/DCMI_Over_LAN security param.
+
+        :param enable: A boolean param, True when IPMI/DCMI_Over_LAN needs to
+               be enabled. If passed False, IPMI/DCMI_Over_LAN security param
+               will be disabled. If nothing passed default will be False.
+        :param ignore : A boolean param, True when IPMI/DCMI_Over_LAN needs to
+               be ignored. If passed False, IPMI/DCMI_Over_LAN security param
+               will not be ignored. If nothing passed default will be False.
+        :raises: IloError, on an error from iLO.
+        """
+        return self._call_method('update_ipmi_over_lan', enable, ignore)
+
+    def update_authentication_failure_logging(self, logging_threshold=None,
+                                              ignore=False):
+        """Update the Authentication_failure_Logging security param.
+
+        :param logging_threshold: Value of authenication failure logging
+               threshold. If nothing passed default will be None.
+        :param ignore : A boolean param, True when
+               Authentication_failure_Logging needs to be ignored. If passed
+               False, Authentication_failure_Logging security param will not
+               be ignored. If nothing passed default will be False.
+        :raises: IloError, on an error from iLO.
+        """
+        return self._call_method('update_authentication_failure_logging',
+                                 logging_threshold, ignore)
+
+    def update_secure_boot(self, enable=True, ignore=False):
+        """Update Secure_Boot security param on the server.
+
+        :param enable: A boolean param, True when Secure_Boot needs to be
+               enabled. If passed False, Secure_Boot security param will
+               be disabled. If nothing passed default will be True.
+        :param ignore : A boolean param, True when Secure_boot needs to be
+               ignored. If passed False, Secure_boot security param will
+               not be ignored. If nothing passed default will be False.
+        """
+        return self._call_method('update_secure_boot', enable, ignore)

@@ -2368,7 +2368,142 @@ class RedfishOperationsTestCase(testtools.TestCase):
         load_cert_mock.assert_not_called()
 
     @mock.patch.object(redfish.RedfishOperations,
-                       '_get_security_dashboard_values')
+                       '_update_security_parameter')
+    @mock.patch.object(main.HPESushy, 'get_account_service')
+    def test_update_password_complexity(self, account_mock, secure_mock):
+        self.rf_client.update_password_complexity()
+        (self.sushy.get_account_service.return_value.
+         update_enforce_passwd_complexity.assert_called_once_with(True))
+
+    @mock.patch.object(redfish.RedfishOperations,
+                       '_update_security_parameter')
+    @mock.patch.object(main.HPESushy, 'get_account_service')
+    def test_update_password_complexity_fail(self, account_mock,
+                                             secure_mock):
+        (self.sushy.get_account_service.return_value.
+         update_enforce_passwd_complexity.
+         side_effect) = sushy.exceptions.SushyError
+
+        self.assertRaisesRegex(
+            exception.IloError,
+            'The Redfish controller failed to update the security dashboard '
+            'parameter ``Password_Complexity``.',
+            self.rf_client.update_password_complexity)
+
+    @mock.patch.object(redfish.RedfishOperations,
+                       '_update_security_parameter')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
+    def test_update_require_login_for_ilo_rbsu(self, manager_mock,
+                                               secure_mock):
+        self.rf_client.update_require_login_for_ilo_rbsu()
+        (manager_mock.return_value.update_login_for_ilo_rbsu.
+         assert_called_once_with(True))
+
+    @mock.patch.object(redfish.RedfishOperations,
+                       '_update_security_parameter')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
+    def test_update_require_login_for_ilo_rbsu_fail(self, manager_mock,
+                                                    secure_mock):
+        (manager_mock.return_value.update_login_for_ilo_rbsu.
+         side_effect) = sushy.exceptions.SushyError
+
+        msg = ("The Redfish controller failed to update the security dashboard"
+               " parameter ``RequiredLoginForiLORBSU``.")
+        self.assertRaisesRegex(
+            exception.IloError, msg,
+            self.rf_client.update_require_login_for_ilo_rbsu)
+
+    @mock.patch.object(redfish.RedfishOperations,
+                       '_update_security_parameter')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
+    def test_update_require_host_authentication(self, manager_mock,
+                                                secure_mock):
+        self.rf_client.update_require_host_authentication()
+        (manager_mock.return_value.update_host_authentication.
+         assert_called_once_with(True))
+
+    @mock.patch.object(redfish.RedfishOperations,
+                       '_update_security_parameter')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
+    def test_update_require_host_authentication_fail(self, manager_mock,
+                                                     secure_mock):
+        (manager_mock.return_value.update_host_authentication.
+         side_effect) = sushy.exceptions.SushyError
+
+        msg = ("The Redfish controller failed to update the "
+               "security dashboard paramater ``RequireHostAuthentication``.")
+        self.assertRaisesRegex(
+            exception.IloError, msg,
+            self.rf_client.update_require_host_authentication)
+
+    @mock.patch.object(redfish.RedfishOperations,
+                       '_update_security_parameter')
+    @mock.patch.object(main.HPESushy, 'get_account_service')
+    def test_update_minimum_password_length(self, account_mock, secure_mock):
+        self.rf_client.update_minimum_password_length(passwd_length=10)
+        (self.sushy.get_account_service.return_value.
+         update_min_passwd_length.assert_called_once_with(10))
+
+    @mock.patch.object(redfish.RedfishOperations,
+                       '_update_security_parameter')
+    @mock.patch.object(main.HPESushy, 'get_account_service')
+    def test_update_minimum_password_length_fail(self, account_mock,
+                                                 secure_mock):
+        (self.sushy.get_account_service.return_value.
+         update_min_passwd_length.side_effect) = sushy.exceptions.SushyError
+
+        msg = ("The Redfish controller failed to update the "
+               "security dashboard paramater ``MinPasswordLength``.")
+        self.assertRaisesRegex(
+            exception.IloError, msg,
+            self.rf_client.update_minimum_password_length)
+
+    @mock.patch.object(redfish.RedfishOperations,
+                       '_update_security_parameter')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
+    def test_update_ipmi_over_lan(self, manager_mock, secure_mock):
+        self.rf_client.update_ipmi_over_lan()
+        (manager_mock.return_value.networkprotocol.return_value.
+         update_ipmi_enabled(False))
+
+    @mock.patch.object(redfish.RedfishOperations,
+                       '_update_security_parameter')
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
+    def test_update_ipmi_over_lan_fail(self, manager_mock, secure_mock):
+        (manager_mock.return_value.networkprotocol.
+         update_ipmi_enabled.side_effect) = sushy.exceptions.SushyError
+
+        msg = ("The Redfish controller failed to update the "
+               "security dashboard paramater ``IPMI/DCMI_Over_LAN``.")
+        self.assertRaisesRegex(
+            exception.IloError, msg, self.rf_client.update_ipmi_over_lan)
+
+    @mock.patch.object(redfish.RedfishOperations,
+                       '_update_security_parameter')
+    @mock.patch.object(main.HPESushy, 'get_account_service')
+    def test_update_authentication_failure_logging(self, account_mock,
+                                                   secure_mock):
+        self.rf_client.update_authentication_failure_logging()
+        (self.sushy.get_account_service.return_value.
+         update_auth_failure_logging.assert_called_once_with(None))
+
+    @mock.patch.object(redfish.RedfishOperations,
+                       '_update_security_parameter')
+    @mock.patch.object(main.HPESushy, 'get_account_service')
+    def test_update_authentication_failure_logging_fail(self, account_mock,
+                                                        secure_mock):
+        (self.sushy.get_account_service.return_value.
+         update_auth_failure_logging.
+         side_effect) = sushy.exceptions.SushyError
+
+        msg = ("The Redfish controller failed to update the security "
+               "dashboard paramater ``Authentication_failure_Logging``.")
+        self.assertRaisesRegex(
+            exception.IloError, msg,
+            self.rf_client.update_authentication_failure_logging)
+
+    @mock.patch.object(redfish.RedfishOperations,
+                       'get_security_dashboard_values')
     def test__parse_security_dashboard_values_for_capabilities(self, sec_mock):
         desc1 = ('The Require Login for iLO RBSU setting is disabled. '
                  'This configuration allows unauthenticated iLO access '

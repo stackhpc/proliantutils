@@ -1,4 +1,4 @@
-# Copyright 2017 Hewlett Packard Enterprise Development LP
+# Copyright 2021 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -19,35 +19,27 @@ from sushy.resources import base
 from proliantutils import exception
 from proliantutils import log
 
+
 LOG = log.get_logger(__name__)
 
 
-class SecurityParams(base.ResourceBase):
+class NetworkProtocol(base.ResourceBase):
 
     identity = base.Field('Id', required=True)
     """The identity for the instance."""
 
-    status = base.Field('SecurityStatus', required=True)
-    """Security status of the server"""
+    name = base.Field("Name")
+    """Name of the service"""
 
-    name = base.Field('Name', required=True)
-    state = base.Field('State', required=True)
-    ignore = base.Field('Ignore', required=True)
-    description = base.Field('Description')
-    recommended_action = base.Field('RecommendedAction')
+    ipmi_enabled = base.Field(["IPMI", "ProtocolEnabled"])
+    """True if IPMI network protocol is enabled else False"""
 
-    def update_security_param_ignore_status(self, ignore):
-        if not isinstance(ignore, bool):
+    def update_ipmi_enabled(self, enable):
+        if not isinstance(enable, bool):
             msg = ('The parameter "%(parameter)s" value "%(value)s" is '
                    'invalid. Valid values are: True/False.' %
-                   {'parameter': 'ignore', 'value': ignore})
+                   {'parameter': 'enable', 'value': enable})
             raise exception.InvalidInputError(msg)
-        data = {"Ignore": ignore}
-        self._conn.patch(self.path, data=data)
 
-
-class SecurityParamsCollection(base.ResourceCollectionBase):
-
-    @property
-    def _resource_type(self):
-        return SecurityParams
+        ipmi_data = {"IPMI": {"ProtocolEnabled": enable}}
+        self._conn.patch(self.path, data=ipmi_data)
