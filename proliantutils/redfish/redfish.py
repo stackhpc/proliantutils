@@ -1692,10 +1692,55 @@ class RedfishOperations(operations.IloOperations):
             msg = 'TLS certificate cannot be upload in BIOS boot mode'
             raise exception.IloCommandNotSupportedInBiosError(msg)
 
-    def remove_tls_certificate(self, cert_file_list=[]):
-        """Removes the TLS certificate from the iLO.
+    def _get_fps_from_file(self, cert_file):
+        """Gets the finger prints from the certificate file.
 
-        :param cert_file_list: List of TLS certificate files
+        Parse the file passed in to get the certificates. For each certificate,
+        find the fingerprint by calculating the digest of base64 decoded
+        content. Finally return the list of the fingerprints.
+
+        :param cert_file: TLS certificate file containing one or more
+               certificates.
+
+        :return: Returns the list of FPs for the certificates in the file.
+        """
+        fp_list = []
+        with open(cert_file, 'r') as f:
+            data = json.dumps(f.read())
+            p = re.sub(r"\"", "", data)
+            q = re.sub(r"\\n", "\r\n", p).rstrip()
+
+            c_list = re.findall(_CERTIFICATE_PATTERN, q, re.DOTALL)
+
+            if len(c_list) == 0:
+                LOG.warning("Could not find any valid certificate in "
+                            "%(cert_file)s. Ignoring." %
+                            {"cert_file": cert_file})
+                return fp_list
+
+            for content in c_list:
+                pem_lines = [line.strip() for line in (
+                    content.strip().split('\n'))]
+
+                try:
+                    der_data = b64decode(''.join(pem_lines[1:-1]))
+                except ValueError:
+                    LOG.warning("Illegal base64 encountered "
+                                "in the certificate.")
+                else:
+                    cert = load_certificate(FILETYPE_ASN1, der_data)
+                    fp = cert.digest('sha256').decode('ascii')
+                    fp_list.append(fp)
+        return fp_list
+
+    def remove_tls_certificate(self, cert_file_list=[],
+                               excl_cert_file_list=[]):
+        """Removes the TLS CA certificates from the iLO.
+
+        :param cert_file_list: List of TLS CA certificate files
+        :param excl_cert_file_list: List of TLS CA certificate files to be
+               retained on the iLO. These certificates will not be
+               removed from the iLO.
 
         :raises: IloError, on an error from iLO.
         :raises: IloCommandNotSupportedError, if the command is
@@ -1709,48 +1754,41 @@ class RedfishOperations(operations.IloOperations):
 
         cert_dict = {}
         del_cert_list = []
+        exc_fp_list = []
+
+        for exc_cert_file in excl_cert_file_list:
+            efp_list = self._get_fps_from_file(exc_cert_file)
+            exc_fp_list.extend(efp_list)
+
+        LOG.debug("Excluding certificates with FingerPrints: %(exc_fp_list)s",
+                  {'exc_fp_list': exc_fp_list})
 
         if not cert_file_list:
             tls_certificates = (sushy_system.bios_settings.tls_config.
                                 tls_certificates)
             for cert in tls_certificates:
                 fp = cert.get("FingerPrint")
+
+                if fp not in exc_fp_list:
+                    cert_fp = {
+                        "FingerPrint": fp
+                    }
+                    del_cert_list.append(cert_fp)
+
+        else:
+            all_fp_list = []
+
+            for cert_file in cert_file_list:
+                afp_list = self._get_fps_from_file(cert_file)
+                all_fp_list.extend(afp_list)
+
+            final_fp_set = set(all_fp_list) - set(exc_fp_list)
+
+            for fp in final_fp_set:
                 cert_fp = {
                     "FingerPrint": fp
                 }
                 del_cert_list.append(cert_fp)
-
-        else:
-            for cert_file in cert_file_list:
-                with open(cert_file, 'r') as f:
-                    data = json.dumps(f.read())
-                    p = re.sub(r"\"", "", data)
-                    q = re.sub(r"\\n", "\r\n", p).rstrip()
-
-                    c_list = re.findall(_CERTIFICATE_PATTERN, q, re.DOTALL)
-
-                    if len(c_list) == 0:
-                        LOG.warning("Could not find any valid certificate in "
-                                    "%(cert_file)s. Ignoring." %
-                                    {"cert_file": cert_file})
-                        continue
-
-                    for content in c_list:
-                        pem_lines = [line.strip() for line in (
-                            content.strip().split('\n'))]
-
-                        try:
-                            der_data = b64decode(''.join(pem_lines[1:-1]))
-                        except ValueError:
-                            LOG.warning("Illegal base64 encountered "
-                                        "in the certificate.")
-                        else:
-                            cert = load_certificate(FILETYPE_ASN1, der_data)
-                            fp = cert.digest('sha256').decode('ascii')
-                            cert_fp = {
-                                "FingerPrint": fp
-                            }
-                            del_cert_list.append(cert_fp)
 
         if len(del_cert_list) == 0:
             msg = (self._("No valid certificate in %(cert_file_list)s.") %
