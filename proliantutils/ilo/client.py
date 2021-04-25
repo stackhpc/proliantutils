@@ -132,7 +132,9 @@ SUPPORTED_REDFISH_METHODS = [
     'update_minimum_password_length',
     'update_ipmi_over_lan',
     'update_authentication_failure_logging',
-    'update_secure_boot'
+    'update_secure_boot',
+    'create_csr',
+    'add_https_certificate'
 ]
 
 LOG = log.get_logger(__name__)
@@ -1029,3 +1031,21 @@ class IloClient(operations.IloOperations):
                not be ignored. If nothing passed default will be False.
         """
         return self._call_method('update_secure_boot', enable, ignore)
+
+    def create_csr(self, path, csr_params):
+        """Creates the Certificate Signing Request.
+
+        :param path: directory to store csr file.
+        :param csr_params: A dictionary containing all the necessary
+               information required to create CSR.
+        :raises: IloError, on an error from iLO.
+        """
+        return self._call_method('create_csr', path, csr_params)
+
+    def add_https_certificate(self, cert_file):
+        """Adds the signed https certificate to the iLO.
+
+        :param cert_file: Signed HTTPS certificate file.
+        :raises: IloError, on an error from iLO.
+        """
+        return self._call_method('add_https_certificate', cert_file)
