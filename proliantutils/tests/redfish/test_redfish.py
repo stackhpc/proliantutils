@@ -18,6 +18,7 @@ import builtins
 import collections
 import io
 import json
+import os
 
 import ddt
 import mock
@@ -2512,6 +2513,120 @@ class RedfishOperationsTestCase(testtools.TestCase):
         self.assertRaisesRegex(
             exception.IloError, msg,
             self.rf_client.update_authentication_failure_logging)
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
+    @mock.patch.object(os, 'makedirs', autospec=True)
+    @mock.patch.object(redfish, 'shutil', autospec=True)
+    def test_create_csr(self, shutil_mock, makedirs_mock, manager_mock):
+        data = {
+            "CommonName": '1.1.1.1',
+            "Country": 'IN',
+            "State": 'KA',
+            "City": 'blr',
+            "OrgName": 'HPE',
+            "OrgUnit": None
+        }
+        (manager_mock.return_value.securityservice.https_certificate_uri.
+         generate_csr.return_value) = 'certificate'
+        self.rf_client.create_csr('/httproot', data)
+        (manager_mock.return_value.securityservice.https_certificate_uri.
+         generate_csr.assert_called_once_with(data))
+        makedirs_mock.assert_called_once_with('/httproot/cert', 0o755)
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
+    def test_create_csr_fail(self, manager_mock):
+        data = {
+            "CommonName": '1.1.1.1',
+            "Country": 'IN',
+            "State": 'KA',
+            "City": 'blr',
+            "OrgName": 'HPE',
+            "OrgUnit": None
+        }
+        (manager_mock.return_value.securityservice.https_certificate_uri.
+         generate_csr.side_effect) = sushy.exceptions.SushyError
+
+        msg = ("The Redfish controller failed to create the "
+               "certificate signing request. ")
+        self.assertRaisesRegex(
+            exception.IloError, msg, self.rf_client.create_csr,
+            '/httproot', data)
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
+    @mock.patch.object(builtins, 'open')
+    def test_add_https_certificate(self, open_mock, manager_mock):
+        data = (
+            "-----BEGIN CERTIFICATE-----\nMIID7TC\nCF"
+            "g879\n-----END CERTIFICATE-----\n"
+            "-----BEGIN CERTIFICATE-----\nKHY8UP\nGH"
+            "f792\n-----END CERTIFICATE-----\n"
+        )
+
+        fd_mock = mock.MagicMock(spec=io.BytesIO)
+        open_mock.return_value = fd_mock
+        fd_mock.__enter__.return_value = fd_mock
+        fd_mock.read.return_value = data
+        c_l = [
+            "-----BEGIN CERTIFICATE-----\r\nMIID7TC\r\nCF"
+            "g879\r\n-----END CERTIFICATE-----",
+            "-----BEGIN CERTIFICATE-----\r\nKHY8UP\r\nGH"
+            "f792\r\n-----END CERTIFICATE-----"
+        ]
+
+        cert_file = '/path/to/certfile'
+        self.rf_client.add_https_certificate(cert_file)
+
+        (manager_mock.return_value.securityservice.https_certificate_uri.
+         import_certificate.assert_called_once_with(c_l[0]))
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
+    @mock.patch.object(builtins, 'open')
+    def test_add_https_certificate_no_certificate(self, open_mock,
+                                                  manager_mock):
+        data = (
+            "-----UNFORMATED CERTIFICATE-----\nMIID7TC\nCF"
+            "g879\n-----END CERTIFICATE-----\n"
+            "-----UNFORMATED CERTIFICATE-----\nKHY8UP\nGH"
+            "f792\n-----END CERTIFICATE-----\n"
+        )
+
+        fd_mock = mock.MagicMock(spec=io.BytesIO)
+        open_mock.return_value = fd_mock
+        fd_mock.__enter__.return_value = fd_mock
+        fd_mock.read.return_value = data
+        cert_file = "/path/to/certfile"
+
+        self.assertRaisesRegex(
+            exception.IloError,
+            "No valid certificate",
+            self.rf_client.add_https_certificate, cert_file)
+
+        (manager_mock.return_value.securityservice.https_certificate_uri.
+         import_certificate.assert_not_called())
+
+    @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
+    @mock.patch.object(builtins, 'open')
+    def test_add_https_certificate_fail(self, open_mock, manager_mock):
+        data = (
+            "-----BEGIN CERTIFICATE-----\nMIID7TC\nCF"
+            "g879\n-----END CERTIFICATE-----\n"
+            "-----BEGIN CERTIFICATE-----\nKHY8UP\nGH"
+            "f792\n-----END CERTIFICATE-----\n"
+        )
+
+        fd_mock = mock.MagicMock(spec=io.BytesIO)
+        open_mock.return_value = fd_mock
+        fd_mock.__enter__.return_value = fd_mock
+        fd_mock.read.return_value = data
+
+        cert_file = '/path/to/certfile'
+        (manager_mock.return_value.securityservice.https_certificate_uri.
+         import_certificate.side_effect) = sushy.exceptions.SushyError
+
+        self.assertRaisesRegex(
+            exception.IloError,
+            'The Redfish controller failed to import the given '
+            'certificate. ', self.rf_client.add_https_certificate, cert_file)
 
     @mock.patch.object(redfish.RedfishOperations,
                        'get_security_dashboard_values')

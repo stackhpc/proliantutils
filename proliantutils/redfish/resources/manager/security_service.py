@@ -18,6 +18,7 @@ from sushy.resources import base
 from sushy import utils as sushy_utils
 
 from proliantutils import log
+from proliantutils.redfish.resources.manager import https_cert
 from proliantutils.redfish.resources.manager import security_dashboard
 from proliantutils.redfish.resources.manager import security_params
 
@@ -35,6 +36,9 @@ class SecurityService(base.ResourceBase):
                    required=True))
     security_dashboard_uri = (
         base.Field(["Links", "SecurityDashboard", "@odata.id"],
+                   required=True))
+    https_cert_uri = (
+        base.Field(["Links", "HttpsCert", "@odata.id"],
                    required=True))
 
     @property
@@ -57,4 +61,15 @@ class SecurityService(base.ResourceBase):
         """
         return security_params.SecurityParamsCollection(
             self._conn, self.security_params_collection_uri,
+            redfish_version=self.redfish_version)
+
+    @property
+    @sushy_utils.cache_it
+    def https_certificate_uri(self):
+        """Gets the instance of https certificate manager
+
+        :returns: an instance of https certificate manager.
+        """
+        return https_cert.HttpsCert(
+            self._conn, self.https_cert_uri,
             redfish_version=self.redfish_version)
