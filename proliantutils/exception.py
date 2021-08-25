@@ -1,3 +1,4 @@
+# Copyright 2022 Hewlett Packard Enterprise Development LP
 # Copyright 2014 Hewlett-Packard Development Company, L.P.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -232,3 +233,14 @@ class MissingAttributeError(RedfishError):
 class InvalidParameterValueError(RedfishError):
     message = ('The parameter "%(parameter)s" value "%(value)s" is invalid. '
                'Valid values are: %(valid_values)s')
+
+
+class CertificateCreationError(ProliantUtilsException):
+    message = ("Failed to create HTTPS certificate"
+               "reason: %(reason)s")
+
+    def __init__(self, message=None, **kwargs):
+        if not message:
+            message = self.message % kwargs
+
+        super(CertificateCreationError, self).__init__(message)

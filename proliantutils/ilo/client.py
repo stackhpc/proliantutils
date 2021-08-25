@@ -1,4 +1,4 @@
-# Copyright 2018 Hewlett-Packard Development Company, L.P.
+# Copyright 2018-2022 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -134,7 +134,8 @@ SUPPORTED_REDFISH_METHODS = [
     'update_authentication_failure_logging',
     'update_secure_boot',
     'create_csr',
-    'add_https_certificate'
+    'add_https_certificate',
+    'add_ssl_certificate'
 ]
 
 LOG = log.get_logger(__name__)
@@ -1033,6 +1034,7 @@ class IloClient(operations.IloOperations):
         """
         return self._call_method('update_secure_boot', enable, ignore)
 
+    # This method is deprecated, and will be removed in future release.
     def create_csr(self, path, csr_params):
         """Creates the Certificate Signing Request.
 
@@ -1043,6 +1045,7 @@ class IloClient(operations.IloOperations):
         """
         return self._call_method('create_csr', path, csr_params)
 
+    # This method is deprecated, and will be removed in future release.
     def add_https_certificate(self, cert_file):
         """Adds the signed https certificate to the iLO.
 
@@ -1050,3 +1053,21 @@ class IloClient(operations.IloOperations):
         :raises: IloError, on an error from iLO.
         """
         return self._call_method('add_https_certificate', cert_file)
+
+    def add_ssl_certificate(self, csr_params, signed_cert,
+                            private_key, pass_phrase):
+        """Creates CSR and adds the signed SSL certificate to the iLO.
+
+        :param csr_params: A dictionary containing all the necessary
+               information required to create CSR.
+        :param signed_cert: Signed certificate which will be used
+               to sign the created CSR.
+        :param private_key: private key.
+        :param pass_phrase: Pass phrase for the private key.
+        :raises: IloError, on an error from iLO.
+        """
+        return self._call_method('add_ssl_certificate',
+                                 csr_params=csr_params,
+                                 signed_cert=signed_cert,
+                                 private_key=private_key,
+                                 pass_phrase=pass_phrase)

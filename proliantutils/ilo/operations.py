@@ -1,3 +1,4 @@
+# Copyright 2022 Hewlett Packard Enterprise Development LP
 # Copyright 2014 Hewlett-Packard Development Company, L.P.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -563,6 +564,42 @@ class IloOperations(object):
         """Removes the TLS certificate from the iLO
 
         :param cert_file_list: List of TLS certificate files
+        :raises: IloError, on an error from iLO.
+        :raises: IloCommandNotSupportedError, if the command is
+                 not supported on the server.
+        """
+        raise exception.IloCommandNotSupportedError(ERRMSG)
+
+        # This method is deprecated, and will be removed in future release.
+    def create_csr(self, path, csr_params):
+        """Creates the Certificate Signing Request.
+
+        :param path: directory to store csr file.
+        :param csr_params: A dictionary containing all the necessary
+               information required to create CSR.
+        :raises: IloError, on an error from iLO.
+        """
+        raise exception.IloCommandNotSupportedError(ERRMSG)
+
+    # This method is deprecated, and will be removed in future release.
+    def add_https_certificate(self, cert_file):
+        """Adds the signed https certificate to the iLO.
+
+        :param cert_file: Signed HTTPS certificate file.
+        :raises: IloError, on an error from iLO.
+        """
+        raise exception.IloCommandNotSupportedError(ERRMSG)
+
+    def add_ssl_certificate(self, csr_params, signed_cert,
+                            private_key, pass_phrase):
+        """Creates CSR and adds the signed SSL certificate to the iLO.
+
+        :param csr_params: A dictionary containing all the necessary
+               information required to create CSR.
+        :param signed_cert: Signed certificate which will be used
+               to sign the created CSR.
+        :param private_key: private key.
+        :param pass_phrase: Pass phrase for the private key.
         :raises: IloError, on an error from iLO.
         :raises: IloCommandNotSupportedError, if the command is
                  not supported on the server.

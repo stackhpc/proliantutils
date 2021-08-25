@@ -16,9 +16,8 @@ __author__ = 'HPE'
 
 from base64 import b64decode
 import json
-import os
 import re
-import shutil
+import subprocess
 import tempfile
 
 from OpenSSL.crypto import FILETYPE_ASN1
@@ -891,10 +890,9 @@ class RedfishOperations(operations.IloOperations):
             LOG.debug(msg)
             raise exception.IloError(msg)
 
-    def create_csr(self, path, csr_params):
+    def create_csr(self, csr_params):
         """Creates the Certificate Signing Request.
 
-        :param path: directory to store csr file.
         :param csr_params: A dictionary containing all the necessary
                information required to create CSR.
         :raises: IloError, on an error from iLO.
@@ -905,23 +903,83 @@ class RedfishOperations(operations.IloOperations):
                 sushy_man.securityservice.https_certificate_uri.generate_csr(
                     csr_params))
 
-            dir = os.path.join(path, 'cert')
-
-            if not os.path.exists(dir):
-                os.makedirs(dir, 0o755)
-
             (fd, temp_file) = tempfile.mkstemp(suffix='.csr')
 
             with open(temp_file, 'w') as f:
                 f.write(cert_request)
 
-            shutil.copy(temp_file, dir)
+            return temp_file
         except sushy.exceptions.SushyError as e:
             msg = (self._('The Redfish controller failed to create the '
                           'certificate signing request. '
                           'Error %(error)s') % {'error': str(e)})
             LOG.debug(msg)
             raise exception.IloError(msg)
+
+    def add_ssl_certificate(self, csr_params, signed_cert,
+                            private_key, pass_phrase):
+        """Creates CSR and adds the signed SSL certificate to the iLO.
+
+        :param csr_params: A dictionary containing all the necessary
+               information required to create CSR.
+        :param signed_cert: signed certificate which will be used
+               to sign the created CSR.
+        :param private_key: private key.
+        :param pass_phrase: Pass phrase for the private key.
+        :raises: IloError, on an error from iLO.
+        """
+        csr_file = self.create_csr(csr_params)
+
+        (fd, temp_file) = tempfile.mkstemp(suffix='.ext')
+        (fd, https_cert_file) = tempfile.mkstemp(suffix='.crt')
+        (fd, ss_cert_file) = tempfile.mkstemp(suffix='.crt')
+
+        with open(signed_cert, 'r') as f:
+            data = json.dumps(f.read())
+        p = re.sub(r"\"", "", data)
+        q = re.sub(r"\\n", "\r\n", p).rstrip()
+
+        c_list = re.findall(_CERTIFICATE_PATTERN, q, re.DOTALL)
+
+        if len(c_list) == 0:
+            msg = (self._("No valid certificate in %(cert_file)s.") %
+                   {"cert_file": signed_cert})
+            LOG.debug(msg)
+            raise exception.InvalidParameterValueError(msg)
+
+        ss_cert = c_list[0]
+
+        with open(ss_cert_file, 'w') as f:
+            f.write(ss_cert)
+
+        content = [
+            "authorityKeyIdentifier = keyid,issuer\n",
+            "basicConstraints = CA:true,pathlen:1\n",
+            "keyUsage = digitalSignature,keyEncipherment,keyCertSign,cRLSign",
+            "\nextendedKeyUsage = clientAuth,serverAuth\n",
+            "subjectKeyIdentifier = hash"]
+
+        with open(temp_file, 'w') as f:
+            f.writelines(content)
+
+        cert_cmd = (
+            "openssl x509 -req -days 365 -in %(csr_file)s -extfile"
+            " %(tempfile)s -CA %(cert)s -CAkey %(p_key)s -passin "
+            " pass:%(pphrase)s -CAcreateserial -out %(cert_file)s"
+            % {'csr_file': csr_file, 'tempfile': temp_file,
+               'cert': ss_cert_file, 'p_key': private_key,
+               'pphrase': pass_phrase, 'cert_file': https_cert_file})
+        try:
+            process = subprocess.Popen(cert_cmd, stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE, shell=True)
+            out, err = process.communicate()
+        except Exception as e:
+            msg = (self._("Failed to create HTTPS certificate. "
+                          "error: %(err)s") % {"err": e})
+            LOG.debug(msg)
+            raise exception.CertificateCreationError(msg)
+
+        self.add_https_certificate(https_cert_file)
 
     def add_https_certificate(self, cert_file):
         """Adds the signed https certificate to the iLO.

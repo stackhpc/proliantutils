@@ -18,7 +18,6 @@ import builtins
 import collections
 import io
 import json
-import os
 from unittest import mock
 
 import ddt
@@ -2525,9 +2524,7 @@ class RedfishOperationsTestCase(testtools.TestCase):
             self.rf_client.update_authentication_failure_logging)
 
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
-    @mock.patch.object(os, 'makedirs', autospec=True)
-    @mock.patch.object(redfish, 'shutil', autospec=True)
-    def test_create_csr(self, shutil_mock, makedirs_mock, manager_mock):
+    def test__create_csr(self, manager_mock):
         data = {
             "CommonName": '1.1.1.1',
             "Country": 'IN',
@@ -2538,13 +2535,12 @@ class RedfishOperationsTestCase(testtools.TestCase):
         }
         (manager_mock.return_value.securityservice.https_certificate_uri.
          generate_csr.return_value) = 'certificate'
-        self.rf_client.create_csr('/httproot', data)
+        self.rf_client.create_csr(data)
         (manager_mock.return_value.securityservice.https_certificate_uri.
          generate_csr.assert_called_once_with(data))
-        makedirs_mock.assert_called_once_with('/httproot/cert', 0o755)
 
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
-    def test_create_csr_fail(self, manager_mock):
+    def test__create_csr_fail(self, manager_mock):
         data = {
             "CommonName": '1.1.1.1',
             "Country": 'IN',
@@ -2559,12 +2555,47 @@ class RedfishOperationsTestCase(testtools.TestCase):
         msg = ("The Redfish controller failed to create the "
                "certificate signing request. ")
         self.assertRaisesRegex(
-            exception.IloError, msg, self.rf_client.create_csr,
-            '/httproot', data)
+            exception.IloError, msg, self.rf_client.create_csr, data)
+
+    @mock.patch.object(redfish.RedfishOperations, 'create_csr')
+    @mock.patch.object(redfish.RedfishOperations, 'add_https_certificate')
+    @mock.patch.object(builtins, 'open')
+    @mock.patch('subprocess.Popen')
+    def test_add_ssl_certificate(self, subprocess_mock, open_mock,
+                                 https_cert_mock, create_mock):
+        csr_params = {
+            "CommonName": '1.1.1.1',
+            "Country": 'IN',
+            "State": 'KA',
+            "City": 'blr',
+            "OrgName": 'HPE',
+            "OrgUnit": None
+        }
+        p_key = '/p_key.key'
+        create_mock.return_value = '/tmp/csr_file'
+        data = (
+            "-----BEGIN CERTIFICATE-----\nMIID7TC\nCF"
+            "g879\n-----END CERTIFICATE-----\n"
+            "-----BEGIN CERTIFICATE-----\nKHY8UP\nGH"
+            "f792\n-----END CERTIFICATE-----\n"
+        )
+
+        fd_mock = mock.MagicMock(spec=io.BytesIO)
+        open_mock.return_value = fd_mock
+        fd_mock.__enter__.return_value = fd_mock
+        fd_mock.read.return_value = data
+        process_mock = mock.Mock()
+        attrs = {'communicate.return_value': ('output', 'error')}
+        process_mock.configure_mock(**attrs)
+        subprocess_mock.return_value = process_mock
+        self.rf_client.add_ssl_certificate(csr_params, data, p_key, '1234')
+        subprocess_mock.assert_called_once()
+        https_cert_mock.assert_called_once()
+        create_mock.assert_called_once()
 
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
     @mock.patch.object(builtins, 'open')
-    def test_add_https_certificate(self, open_mock, manager_mock):
+    def test__add_https_certificate(self, open_mock, manager_mock):
         data = (
             "-----BEGIN CERTIFICATE-----\nMIID7TC\nCF"
             "g879\n-----END CERTIFICATE-----\n"
@@ -2591,8 +2622,8 @@ class RedfishOperationsTestCase(testtools.TestCase):
 
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
     @mock.patch.object(builtins, 'open')
-    def test_add_https_certificate_no_certificate(self, open_mock,
-                                                  manager_mock):
+    def test__add_https_certificate_no_certificate(self, open_mock,
+                                                   manager_mock):
         data = (
             "-----UNFORMATED CERTIFICATE-----\nMIID7TC\nCF"
             "g879\n-----END CERTIFICATE-----\n"
