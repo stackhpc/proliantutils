@@ -36,7 +36,8 @@ class SecurityParamsTestCase(testtools.TestCase):
         path = ("/redfish/v1/Mangers/1/SecurityService/"
                 "SecurityDashboard/SecurityParams")
         self.sec_param = security_params.SecurityParams(
-            self.conn, path, '1.0.2', None)
+            self.conn, path, redfish_version='1.0.2',
+            registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sec_param._parse_attributes(self.json_doc)
@@ -67,7 +68,7 @@ class SecurityParamsCollectionTestCase(testtools.TestCase):
             self.conn,
             ('/redfish/v1/Managers/1/SecurityService/'
              'SecurityDashboard/SecurityParams'),
-            redfish_version='1.0.2')
+            redfish_version='1.0.2', registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sec_params_col._parse_attributes(self.json_doc)
@@ -89,7 +90,8 @@ class SecurityParamsCollectionTestCase(testtools.TestCase):
             self.sec_params_col._conn,
             ('/redfish/v1/Managers/1/SecurityService/SecurityDashboard/'
              'SecurityParams/1'),
-            self.sec_params_col.redfish_version, None)
+            redfish_version=self.sec_params_col.redfish_version,
+            registries=None, root=self.sec_params_col.root)
 
     @mock.patch.object(security_params, 'SecurityParams', autospec=True)
     def test_get_members(self, mock_eth):
@@ -99,9 +101,11 @@ class SecurityParamsCollectionTestCase(testtools.TestCase):
         path2 = ('/redfish/v1/Managers/1/SecurityService/SecurityDashboard/'
                  'SecurityParams/1')
         calls = [mock.call(self.sec_params_col._conn, path,
-                           self.sec_params_col.redfish_version, None),
+                           redfish_version=self.sec_params_col.redfish_version,
+                           registries=None, root=self.sec_params_col.root),
                  mock.call(self.sec_params_col._conn, path2,
-                           self.sec_params_col.redfish_version, None)]
+                           redfish_version=self.sec_params_col.redfish_version,
+                           registries=None, root=self.sec_params_col.root)]
         mock_eth.assert_has_calls(calls)
         self.assertIsInstance(members, list)
         self.assertEqual(2, len(members))

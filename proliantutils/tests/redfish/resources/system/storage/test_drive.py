@@ -35,7 +35,8 @@ class DriveTestCase(testtools.TestCase):
         drive_path = ("/redfish/v1/Systems/437XR1138R2/Storage/1/"
                       "Drives/35D38F11ACEF7BD3")
         self.sys_drive = drive.Drive(
-            self.conn, drive_path, redfish_version='1.0.2')
+            self.conn, drive_path, redfish_version='1.0.2',
+            registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sys_drive._parse_attributes(self.json_doc['drive1'])

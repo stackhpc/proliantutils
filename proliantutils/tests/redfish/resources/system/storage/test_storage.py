@@ -32,7 +32,8 @@ class StorageTestCase(testtools.TestCase):
 
         path = ("/redfish/v1/Systems/437XR1138R2/Storage/1")
         self.sys_stor = storage.Storage(
-            self.conn, path, redfish_version='1.0.2')
+            self.conn, path, redfish_version='1.0.2',
+            registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sys_stor._parse_attributes(self.json_doc)
@@ -154,7 +155,7 @@ class StorageCollectionTestCase(testtools.TestCase):
         self.conn.get.return_value.json.return_value = self.json_doc
         self.sys_stor_col = storage.StorageCollection(
             self.conn, '/redfish/v1/Systems/437XR1138R2/Storage',
-            redfish_version='1.0.2')
+            redfish_version='1.0.2', registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sys_stor_col._parse_attributes(self.json_doc)
@@ -171,7 +172,8 @@ class StorageCollectionTestCase(testtools.TestCase):
         mock_eth.assert_called_once_with(
             self.sys_stor_col._conn,
             ('/redfish/v1/Systems/437XR1138R2/Storage/1'),
-            self.sys_stor_col.redfish_version, None)
+            redfish_version=self.sys_stor_col.redfish_version,
+            registries=None, root=self.sys_stor_col.root)
 
     @mock.patch.object(storage, 'Storage', autospec=True)
     def test_get_members(self, mock_eth):
@@ -179,7 +181,8 @@ class StorageCollectionTestCase(testtools.TestCase):
         path = ("/redfish/v1/Systems/437XR1138R2/Storage/1")
         calls = [
             mock.call(self.sys_stor_col._conn, path,
-                      self.sys_stor_col.redfish_version, None),
+                      redfish_version=self.sys_stor_col.redfish_version,
+                      registries=None, root=self.sys_stor_col.root),
         ]
         mock_eth.assert_has_calls(calls)
         self.assertIsInstance(members, list)

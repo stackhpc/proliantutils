@@ -33,7 +33,8 @@ class PCIDeviceTestCase(testtools.TestCase):
 
         pci_path = "/redfish/v1/Systems/1/PCIDevices/1"
         self.sys_pci = pci_device.PCIDevice(
-            self.conn, pci_path, '1.0.2', None)
+            self.conn, pci_path, redfish_version='1.0.2',
+            registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sys_pci._parse_attributes(self.json_doc)
@@ -53,7 +54,7 @@ class PCIDeviceCollectionTestCase(testtools.TestCase):
         self.conn.get.return_value.json.return_value = self.json_doc
         self.sys_pci_col = pci_device.PCIDeviceCollection(
             self.conn, '/redfish/v1/Systems/1/PCIDevices',
-            redfish_version='1.0.2')
+            redfish_version='1.0.2', registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sys_pci_col._parse_attributes(self.json_doc)
@@ -70,7 +71,8 @@ class PCIDeviceCollectionTestCase(testtools.TestCase):
         mock_pci.assert_called_once_with(
             self.sys_pci_col._conn,
             ('/redfish/v1/Systems/1/PCIDevices/1'),
-            self.sys_pci_col.redfish_version, None)
+            redfish_version=self.sys_pci_col.redfish_version,
+            registries=None, root=self.sys_pci_col.root)
 
     @mock.patch.object(pci_device, 'PCIDevice', autospec=True)
     def test_get_members(self, mock_pci):
@@ -79,9 +81,11 @@ class PCIDeviceCollectionTestCase(testtools.TestCase):
                      "/redfish/v1/Systems/1/PCIDevices/6"]
         calls = [
             mock.call(self.sys_pci_col._conn, path_list[0],
-                      self.sys_pci_col.redfish_version, None),
+                      redfish_version=self.sys_pci_col.redfish_version,
+                      registries=None, root=self.sys_pci_col.root),
             mock.call(self.sys_pci_col._conn, path_list[1],
-                      self.sys_pci_col.redfish_version, None)
+                      redfish_version=self.sys_pci_col.redfish_version,
+                      registries=None, root=self.sys_pci_col.root)
         ]
         mock_pci.assert_has_calls(calls)
         self.assertIsInstance(members, list)

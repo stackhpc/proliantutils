@@ -34,7 +34,7 @@ class HPELogicalDriveTestCase(testtools.TestCase):
         path = ("/redfish/v1/Systems/1/SmartStorage/"
                 "ArrayControllers/0/LogicalDrives")
         self.sys_stor = logical_drive.HPELogicalDrive(
-            self.conn, path, '1.0.2', None)
+            self.conn, path, '1.0.2', registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sys_stor._parse_attributes(self.json_doc)
@@ -53,7 +53,7 @@ class HPELogicalDriveCollectionTestCase(testtools.TestCase):
         self.sys_stor_col = logical_drive.HPELogicalDriveCollection(
             self.conn, ('/redfish/v1/Systems/1/SmartStorage/'
                         'ArrayControllers/0/LogicalDrives'),
-            redfish_version='1.0.2')
+            redfish_version='1.0.2', registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sys_stor_col._parse_attributes(self.json_doc)
@@ -75,7 +75,8 @@ class HPELogicalDriveCollectionTestCase(testtools.TestCase):
             self.sys_stor_col._conn,
             ('/redfish/v1/Systems/1/SmartStorage/ArrayControllers/0/'
              'LogicalDrives/1'),
-            self.sys_stor_col.redfish_version, None)
+            redfish_version=self.sys_stor_col.redfish_version,
+            registries=None, root=self.sys_stor_col.root)
 
     @mock.patch.object(logical_drive, 'HPELogicalDrive', autospec=True)
     def test_get_members(self, mock_eth):
@@ -86,9 +87,11 @@ class HPELogicalDriveCollectionTestCase(testtools.TestCase):
                  "0/LogicalDrives/2")
         calls = [
             mock.call(self.sys_stor_col._conn, path1,
-                      self.sys_stor_col.redfish_version, None),
+                      redfish_version=self.sys_stor_col.redfish_version,
+                      registries=None, root=self.sys_stor_col.root),
             mock.call(self.sys_stor_col._conn, path2,
-                      self.sys_stor_col.redfish_version, None),
+                      redfish_version=self.sys_stor_col.redfish_version,
+                      registries=None, root=self.sys_stor_col.root),
         ]
         mock_eth.assert_has_calls(calls)
         self.assertIsInstance(members, list)

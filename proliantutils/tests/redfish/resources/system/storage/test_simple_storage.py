@@ -33,7 +33,8 @@ class SimpleStorageTestCase(testtools.TestCase):
 
         simple_path = ("/redfish/v1/Systems/437XR1138R2/SimpleStorage/1")
         self.sys_simple = simple_storage.SimpleStorage(
-            self.conn, simple_path, '1.0.2', None)
+            self.conn, simple_path, redfish_version='1.0.2',
+            registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sys_simple._parse_attributes(self.json_doc)
@@ -65,7 +66,7 @@ class SimpleStorageCollectionTestCase(testtools.TestCase):
         self.conn.get.return_value.json.return_value = self.json_doc
         self.sys_simple_col = simple_storage.SimpleStorageCollection(
             self.conn, '/redfish/v1/Systems/437XR1138R2/SimpleStorage',
-            '1.0.2', None)
+            redfish_version='1.0.2', registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sys_simple_col._parse_attributes(self.json_doc)
@@ -82,7 +83,8 @@ class SimpleStorageCollectionTestCase(testtools.TestCase):
         mock_simple.assert_called_once_with(
             self.sys_simple_col._conn,
             '/redfish/v1/Systems/437XR1138R2/SimpleStorage/1',
-            self.sys_simple_col.redfish_version, None)
+            redfish_version=self.sys_simple_col.redfish_version,
+            registries=None, root=self.sys_simple_col.root)
 
     @mock.patch.object(simple_storage, 'SimpleStorage', autospec=True)
     def test_get_members(self, mock_simple):
@@ -90,7 +92,8 @@ class SimpleStorageCollectionTestCase(testtools.TestCase):
         simple_path = ("/redfish/v1/Systems/437XR1138R2/SimpleStorage/1")
         calls = [
             mock.call(self.sys_simple_col._conn, simple_path,
-                      self.sys_simple_col.redfish_version, None),
+                      redfish_version=self.sys_simple_col.redfish_version,
+                      registries=None, root=self.sys_simple_col.root),
         ]
         mock_simple.assert_has_calls(calls)
         self.assertIsInstance(members, list)
