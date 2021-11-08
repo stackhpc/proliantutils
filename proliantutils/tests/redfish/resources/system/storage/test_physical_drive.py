@@ -1,4 +1,4 @@
-# Copyright 2017 Hewlett Packard Enterprise Development LP
+# Copyright 2017-2022 Hewlett Packard Enterprise Development LP
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -35,7 +35,8 @@ class HPEPhysicalDriveTestCase(testtools.TestCase):
         path = ("/redfish/v1/Systems/1/SmartStorage/"
                 "ArrayControllers/0/DiskDrives")
         self.sys_stor = physical_drive.HPEPhysicalDrive(
-            self.conn, path, '1.0.2', None)
+            self.conn, path, redfish_version='1.0.2',
+            registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sys_stor._parse_attributes(self.json_doc['drive1'])
@@ -56,7 +57,7 @@ class HPEPhysicalDriveCollectionTestCase(testtools.TestCase):
         self.sys_stor_col = physical_drive.HPEPhysicalDriveCollection(
             self.conn, ('/redfish/v1/Systems/1/SmartStorage/'
                         'ArrayControllers/0/DiskDrives'),
-            redfish_version='1.0.2')
+            redfish_version='1.0.2', registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sys_stor_col._parse_attributes(self.json_doc)
@@ -78,7 +79,8 @@ class HPEPhysicalDriveCollectionTestCase(testtools.TestCase):
             self.sys_stor_col._conn,
             ('/redfish/v1/Systems/1/SmartStorage/ArrayControllers/0/'
              'DiskDrives/3'),
-            self.sys_stor_col.redfish_version, None)
+            redfish_version=self.sys_stor_col.redfish_version,
+            registries=None, root=self.sys_stor_col.root)
 
     @mock.patch.object(physical_drive, 'HPEPhysicalDrive', autospec=True)
     def test_get_members(self, mock_eth):
@@ -89,9 +91,11 @@ class HPEPhysicalDriveCollectionTestCase(testtools.TestCase):
                  "0/DiskDrives/4")
         calls = [
             mock.call(self.sys_stor_col._conn, path,
-                      self.sys_stor_col.redfish_version, None),
+                      redfish_version=self.sys_stor_col.redfish_version,
+                      registries=None, root=self.sys_stor_col.root),
             mock.call(self.sys_stor_col._conn, path2,
-                      self.sys_stor_col.redfish_version, None),
+                      redfish_version=self.sys_stor_col.redfish_version,
+                      registries=None, root=self.sys_stor_col.root),
         ]
         mock_eth.assert_has_calls(calls)
         self.assertIsInstance(members, list)

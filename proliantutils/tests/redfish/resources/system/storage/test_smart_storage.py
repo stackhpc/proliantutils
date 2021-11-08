@@ -1,4 +1,4 @@
-# Copyright 2017 Hewlett Packard Enterprise Development LP
+# Copyright 2017-2022 Hewlett Packard Enterprise Development LP
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -34,7 +34,7 @@ class HPESmartStorageTestCase(testtools.TestCase):
 
         path = ("/redfish/v1/Systems/1/SmartStorage")
         self.sys_stor = smart_storage.HPESmartStorage(
-            self.conn, path, '1.0.2', None)
+            self.conn, path, '1.0.2', registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sys_stor._parse_attributes(self.json_doc)

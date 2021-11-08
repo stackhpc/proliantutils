@@ -1,4 +1,4 @@
-# Copyright 2017 Hewlett Packard Enterprise Development LP
+# Copyright 2017-2022 Hewlett Packard Enterprise Development LP
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -32,7 +32,8 @@ class VolumeTestCase(testtools.TestCase):
 
         vol_path = ("/redfish/v1/Systems/437XR1138R2/Storage/1/Volumes/1")
         self.sys_vol = volume.Volume(
-            self.conn, vol_path, '1.0.2', None)
+            self.conn, vol_path, redfish_version='1.0.2',
+            registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sys_vol._parse_attributes(self.json_doc)
@@ -52,7 +53,7 @@ class VolumeCollectionTestCase(testtools.TestCase):
             self.conn.get.return_value.json.return_value = self.json_doc
         self.sys_vol_col = volume.VolumeCollection(
             self.conn, '/redfish/v1/Systems/437XR1138R2/Storage/1/Volumes',
-            '1.0.2', None)
+            redfish_version='1.0.2', registries=None, root=None)
 
     def test__parse_attributes(self):
         self.sys_vol_col._parse_attributes(self.json_doc)
@@ -69,7 +70,8 @@ class VolumeCollectionTestCase(testtools.TestCase):
         mock_vol.assert_called_once_with(
             self.sys_vol_col._conn,
             ('/redfish/v1/Systems/437XR1138R2/Volumes/1'),
-            self.sys_vol_col.redfish_version, None)
+            redfish_version=self.sys_vol_col.redfish_version,
+            registries=None, root=self.sys_vol_col.root)
 
     @mock.patch.object(volume, 'Volume', autospec=True)
     def test_get_members(self, mock_vol):
@@ -77,7 +79,8 @@ class VolumeCollectionTestCase(testtools.TestCase):
         vol_path = ("/redfish/v1/Systems/437XR1138R2/Storage/1/Volumes/1")
         calls = [
             mock.call(self.sys_vol_col._conn, vol_path,
-                      self.sys_vol_col.redfish_version, None),
+                      redfish_version=self.sys_vol_col.redfish_version,
+                      registries=None, root=self.sys_vol_col.root),
         ]
         mock_vol.assert_has_calls(calls)
         self.assertIsInstance(members, list)
