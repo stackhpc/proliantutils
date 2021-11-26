@@ -15,8 +15,8 @@
 
 import json
 import time
+from unittest import mock
 
-import mock
 import sushy
 import testtools
 

@@ -15,8 +15,8 @@
 __author__ = 'HPE'
 
 import json
+from unittest import mock
 
-import mock
 import testtools
 
 from proliantutils.redfish.resources.account_service import account

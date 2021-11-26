@@ -17,8 +17,8 @@ import shutil
 import tarfile
 import tempfile
 import time
+from unittest import mock
 
-import mock
 from oslo_concurrency import processutils
 from oslo_serialization import base64
 import testtools

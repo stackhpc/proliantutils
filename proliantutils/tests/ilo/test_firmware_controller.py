@@ -18,9 +18,9 @@ import os
 import shutil
 import tempfile
 import unittest
+from unittest import mock
 
 import ddt
-import mock
 from six.moves import builtins as __builtin__
 
 from proliantutils import exception
@@ -466,6 +466,9 @@ class FirmwareImageExtractorTestCase(unittest.TestCase):
         _get_firmware_file_in_new_path_mock.side_effect = [
             'extracted_file_from_scexe',
             'extracted_file_from_rpm',
+        ]
+        tempfile_mock.mkdtemp.side_effect = [
+            '/tmp', '/tmp', '/tmp'
         ]
         # | WHEN |
         for fw_file in firmware_files:

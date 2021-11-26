@@ -14,8 +14,8 @@
 
 import base64
 import json
+from unittest import mock
 
-import mock
 import requests
 from requests.packages import urllib3
 from requests.packages.urllib3 import exceptions as urllib3_exceptions

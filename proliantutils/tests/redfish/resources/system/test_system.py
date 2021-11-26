@@ -14,8 +14,8 @@
 #    under the License.
 
 import json
+from unittest import mock
 
-import mock
 import sushy
 from sushy.resources.system import system as sushy_system
 import testtools
@@ -613,7 +613,7 @@ class HPESystemTestCase(testtools.TestCase):
         parse_raid_config_mock.return_value = parse_data
         check_smart_storage_config_ids_mock.return_value = None
         get_smart_storage_config_model_mock.return_value = None
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             exception.IloError,
             "The Redfish controller failed to create the raid "
             "configuration for one or more controllers with",
@@ -712,7 +712,7 @@ class HPESystemTestCase(testtools.TestCase):
             mock.PropertyMock(return_value=config_id))
         get_smart_storage_config_mock.return_value.read_raid.side_effect = (
             sushy.exceptions.SushyError)
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             exception.IloError,
             "The Redfish controller failed to read the "
             "raid configuration in one or more controllers with Error:",
@@ -736,7 +736,7 @@ class HPESystemTestCase(testtools.TestCase):
         parse_raid_config_mock.return_value = parse_data
         (get_smart_storage_config_model_mock.
          return_value.create_raid.side_effect) = sushy.exceptions.SushyError
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             exception.IloError,
             "The Redfish controller failed to create the "
             "raid configuration for one or more controllers with Error:",
@@ -800,7 +800,7 @@ class HPESystemTestCase(testtools.TestCase):
         parse_raid_config_data_mock.return_value = parse_data
         (get_ssc_by_controller_model_mock.
          return_value.read_raid.side_effect) = sushy.exceptions.SushyError
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             exception.IloError,
             "The Redfish controller failed to read the "
             "raid configuration in one or more controllers with Error:",
@@ -895,7 +895,7 @@ class HPESystemTestCase(testtools.TestCase):
         self.conn.get.return_value.json.reset_mock()
         (self.conn.get.return_value.
          json.side_effect) = [ss_json, sushy.exceptions.SushyError]
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             exception.IloError,
             "The Redfish controller failed to get the status of sanitize disk "
             "erase. Error:",
@@ -924,7 +924,7 @@ class HPESystemTestCase(testtools.TestCase):
             '#HpeComputerSystemExt.SecureSystemErase')
         type(secure_erase_action_mock.return_value).target_uri = target_uri
         self.sys_inst._conn.post.side_effect = sushy.exceptions.SushyError
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             exception.IloError,
             "The Redfish controller failed to perform one button "
             "secure erase operation on the hardware. Error:",
@@ -1095,7 +1095,7 @@ class HPESystemTestCase(testtools.TestCase):
         self.conn.get.return_value.json.reset_mock()
         (self.conn.get.return_value.
          json.side_effect) = [ss_json, acc_json, sushy.exceptions.SushyError]
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             exception.IloError,
             "The Redfish controller failed to perform the sanitize disk erase "
             "on smart storage controller: HPE Smart Array P408i-p SR Gen10, "

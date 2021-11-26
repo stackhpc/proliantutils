@@ -15,8 +15,8 @@
 """Test class for Utils Module."""
 
 import hashlib
+from unittest import mock
 
-import mock
 import requests
 import six
 import six.moves.builtins as __builtin__

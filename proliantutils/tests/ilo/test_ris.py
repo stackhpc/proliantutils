@@ -16,9 +16,9 @@
 """Test class for RIS Module."""
 
 import json
+from unittest import mock
 
 import ddt
-import mock
 from requests.packages import urllib3
 from requests.packages.urllib3 import exceptions as urllib3_exceptions
 import testtools
@@ -455,8 +455,15 @@ class IloRisTestCase(testtools.TestCase):
             self, raw_boot_mode_value, expected_boot_mode_value,
             _get_host_details_mock):
         # | GIVEN |
-        system_val = {'Oem': {'Hp': {'Bios':
-                                     {'UefiClass': raw_boot_mode_value}}}}
+        system_val = {
+            'Oem': {
+                'Hp': {
+                    'Bios': {
+                        'UefiClass': raw_boot_mode_value
+                    }
+                }
+            }
+        }
         _get_host_details_mock.return_value = system_val
         # | WHEN |
         actual_val = self.client.get_supported_boot_mode()
@@ -1833,11 +1840,13 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
         map_settings = json.loads(ris_outputs.GET_BIOS_MAPPINGS)
         mappings_mock.return_value = map_settings
         iscsi_uri = '/rest/v1/systems/1/bios/iScsi/Settings'
-        properties = {'iSCSITargetName':
-                      'iqn.2011-07.com.example.server:test1',
-                      'iSCSIBootLUN': '1',
-                      'iSCSITargetIpAddress': '10.10.1.30',
-                      'iSCSITargetTcpPort': 3260}
+        properties = {
+            'iSCSITargetName':
+                'iqn.2011-07.com.example.server:test1',
+                'iSCSIBootLUN': '1',
+                'iSCSITargetIpAddress': '10.10.1.30',
+                'iSCSITargetTcpPort': 3260
+        }
         settings = json.loads(ris_outputs.GET_ISCSI_PATCH)
         check_iscsi_mock.return_value = iscsi_uri
         patch_mock.return_value = (200, ris_outputs.GET_HEADERS,
@@ -1857,11 +1866,13 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
             validate_mock):
         nic_association_mock.return_value = 'NicBoot1'
         iscsi_uri = '/rest/v1/systems/1/bios/iScsi/Settings'
-        properties = {'iSCSITargetName':
-                      'iqn.2011-07.com.example.server:test1',
-                      'iSCSIBootLUN': '1',
-                      'iSCSITargetIpAddress': '10.10.1.30',
-                      'iSCSITargetTcpPort': 3260}
+        properties = {
+            'iSCSITargetName':
+                'iqn.2011-07.com.example.server:test1',
+                'iSCSIBootLUN': '1',
+                'iSCSITargetIpAddress': '10.10.1.30',
+                'iSCSITargetTcpPort': 3260
+        }
         settings = json.loads(ris_outputs.GET_ISCSI_PATCH)
         check_iscsi_mock.return_value = iscsi_uri
         patch_mock.return_value = (200, ris_outputs.GET_HEADERS,
@@ -1919,11 +1930,13 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
         map_settings = json.loads(ris_outputs.GET_BIOS_MAPPINGS)
         mappings_mock.return_value = map_settings
         iscsi_uri = '/rest/v1/systems/1/bios/iScsi/Settings'
-        properties = {'iSCSITargetName':
-                      'iqn.2011-07.com.example.server:test1',
-                      'iSCSIBootLUN': '1',
-                      'iSCSITargetIpAddress': '10.10.1.30',
-                      'iSCSITargetTcpPort': 3260}
+        properties = {
+            'iSCSITargetName':
+                'iqn.2011-07.com.example.server:test1',
+                'iSCSIBootLUN': '1',
+                'iSCSITargetIpAddress': '10.10.1.30',
+                'iSCSITargetTcpPort': 3260
+        }
         settings = json.loads(ris_outputs.GET_ISCSI_PATCH)
         check_iscsi_mock.return_value = iscsi_uri
         patch_mock.return_value = (301, ris_outputs.GET_HEADERS,
@@ -2212,8 +2225,10 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
     def test__update_persistent_boot_for_UefiShell(self, rest_patch_mock):
         systems_uri = "/rest/v1/Systems/1"
         new_boot_settings = {}
-        new_boot_settings['Boot'] = {'BootSourceOverrideEnabled': 'Continuous',
-                                     'BootSourceOverrideTarget': 'UefiShell'}
+        new_boot_settings['Boot'] = {
+            'BootSourceOverrideEnabled': 'Continuous',
+            'BootSourceOverrideTarget': 'UefiShell'
+        }
         rest_patch_mock.return_value = (200, ris_outputs.GET_HEADERS,
                                         ris_outputs.REST_POST_RESPONSE)
         self.client._update_persistent_boot(['UefiShell'],
@@ -2229,13 +2244,15 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
             json.loads(ris_outputs.RESPONSE_BODY_FOR_REST_OP_WITH_ISCSI))
         systems_uri = '/rest/v1/Systems/1'
         new1_boot_settings = {}
-        new1_boot_settings['Boot'] = {'UefiTargetBootSourceOverride':
-                                      u'NIC.LOM.1.1.iSCSI'}
+        new1_boot_settings['Boot'] = {
+            'UefiTargetBootSourceOverride':
+                u'NIC.LOM.1.1.iSCSI'
+        }
         new2_boot_settings = {}
-        new2_boot_settings['Boot'] = {'BootSourceOverrideEnabled':
-                                      'Continuous', 'BootSourceOverrideTarget':
-                                      'UefiTarget'}
-
+        new2_boot_settings['Boot'] = {
+            'BootSourceOverrideEnabled': 'Continuous',
+            'BootSourceOverrideTarget': 'UefiTarget'
+        }
         rest_patch_mock.return_value = (200, ris_outputs.GET_HEADERS,
                                         ris_outputs.REST_POST_RESPONSE)
         calls = [mock.call(systems_uri, None, new1_boot_settings),
@@ -2252,12 +2269,14 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
                 ris_outputs.RESPONSE_BODY_FOR_REST_OP_WITH_ISCSI_AND_NONE))
         systems_uri = '/rest/v1/Systems/1'
         new1_boot_settings = {}
-        new1_boot_settings['Boot'] = {'UefiTargetBootSourceOverride':
-                                      u'NIC.LOM.1.1.iSCSI'}
+        new1_boot_settings['Boot'] = {
+            'UefiTargetBootSourceOverride': u'NIC.LOM.1.1.iSCSI'
+        }
         new2_boot_settings = {}
-        new2_boot_settings['Boot'] = {'BootSourceOverrideEnabled':
-                                      'Continuous', 'BootSourceOverrideTarget':
-                                      'UefiTarget'}
+        new2_boot_settings['Boot'] = {
+            'BootSourceOverrideEnabled': 'Continuous',
+            'BootSourceOverrideTarget': 'UefiTarget'
+        }
 
         rest_patch_mock.return_value = (200, ris_outputs.GET_HEADERS,
                                         ris_outputs.REST_POST_RESPONSE)
@@ -2272,7 +2291,7 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
         get_host_mock.return_value = (
             json.loads(ris_outputs.RESPONSE_BODY_FOR_REST_OP))
         self.assertRaisesRegex(exception.IloError, "No UEFI iSCSI bootable "
-                               "device found",
+                                                   "device found",
                                self.client._update_persistent_boot,
                                ['ISCSI'], persistent=True)
 
@@ -2747,24 +2766,24 @@ class TestRISOperationsPrivateMethods(testtools.TestCase):
         ld1 = {"size_gb": 150, "raid_level": '0', "is_root_volume": True}
         raid_config = {"logical_disks": [ld1]}
         product_name_mock.return_value = 'ProLiant BL460c Gen9'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'ProLiant BL460c Gen9',
-                                self.client.read_raid_configuration,
-                                raid_config)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'ProLiant BL460c Gen9',
+                               self.client.read_raid_configuration,
+                               raid_config)
 
     @mock.patch.object(ris.RISOperations, 'get_product_name')
     def test_delete_raid_configuration(self, product_name_mock):
         product_name_mock.return_value = 'ProLiant BL460c Gen9'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'ProLiant BL460c Gen9',
-                                self.client.delete_raid_configuration)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'ProLiant BL460c Gen9',
+                               self.client.delete_raid_configuration)
 
     @mock.patch.object(ris.RISOperations, 'get_product_name')
     def test_create_raid_configuration(self, product_name_mock):
         ld1 = {"size_gb": 150, "raid_level": '0', "is_root_volume": True}
         raid_config = {"logical_disks": [ld1]}
         product_name_mock.return_value = 'ProLiant BL460c Gen9'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'ProLiant BL460c Gen9',
-                                self.client.create_raid_configuration,
-                                raid_config)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'ProLiant BL460c Gen9',
+                               self.client.create_raid_configuration,
+                               raid_config)

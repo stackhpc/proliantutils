@@ -13,8 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 """Test class for Client Module."""
+from unittest import mock
 
-import mock
 import testtools
 
 from proliantutils import exception
@@ -35,7 +35,6 @@ def get_cls_wrapper(cls, cache=True):
 class IloCacheNodeTestCase(testtools.TestCase):
 
     def test_cache_node_cache_true(self):
-
         class Dummyclass1(object):
             pass
 
@@ -43,7 +42,6 @@ class IloCacheNodeTestCase(testtools.TestCase):
         self.assertNotEqual(id(original_cls), id(decorated_cls))
 
     def test_cache_node_cache_false(self):
-
         class Dummyclass2(object):
             pass
 
@@ -53,7 +51,6 @@ class IloCacheNodeTestCase(testtools.TestCase):
 
 
 class IloClientWrapperTestCase(testtools.TestCase):
-
     class DummyClass(object):
         def __init__(self, ip, name, password):
             self._ip = ip
@@ -256,7 +253,6 @@ class IloClientInitTestCase(testtools.TestCase):
     @mock.patch.object(redfish, 'RedfishOperations')
     def test_init_with_use_redfish_only_set(
             self, redfish_mock, ribcl_mock):
-
         c = client.IloClient.cls("1.2.3.4", "admin", "Admin",
                                  timeout=120, port=4430,
                                  bios_password='foo', cacert='/somewhere',
@@ -436,6 +432,7 @@ class IloClientTestCase(testtools.TestCase):
        true    |   false  |      false         | test__call_method_redfish_4
     ===========|==========|====================|=============================
     """
+
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     @mock.patch.object(redfish, 'RedfishOperations')
     def test__call_method_redfish_1(self, redfish_mock,
@@ -900,19 +897,19 @@ class IloClientTestCase(testtools.TestCase):
     def test_delete_raid_configuration_gen9(self, get_product_mock):
         self.client.model = 'Gen9'
         get_product_mock.return_value = 'ProLiant BL460c Gen9'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                '`delete_raid_configuration` is not supported '
-                                'on ProLiant BL460c Gen9',
-                                self.client.delete_raid_configuration)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               '`delete_raid_configuration` is not supported '
+                               'on ProLiant BL460c Gen9',
+                               self.client.delete_raid_configuration)
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     def test_delete_raid_configuration_gen8(self, get_product_mock):
         self.client.model = 'Gen8'
         get_product_mock.return_value = 'ProLiant DL380 G8'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                '`delete_raid_configuration` is not supported '
-                                'on ProLiant DL380 G8',
-                                self.client.delete_raid_configuration)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               '`delete_raid_configuration` is not supported '
+                               'on ProLiant DL380 G8',
+                               self.client.delete_raid_configuration)
 
     @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_do_disk_erase(self, call_mock):
@@ -924,21 +921,21 @@ class IloClientTestCase(testtools.TestCase):
     def test_do_disk_erase_gen9(self, get_product_mock):
         self.client.model = 'Gen9'
         get_product_mock.return_value = 'ProLiant BL460c Gen9'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'The specified operation is not supported '
-                                'on current platform.',
-                                self.client.do_disk_erase,
-                                'SSD', None)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'The specified operation is not supported '
+                               'on current platform.',
+                               self.client.do_disk_erase,
+                               'SSD', None)
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     def test_do_disk_erase_gen8(self, get_product_mock):
         self.client.model = 'Gen8'
         get_product_mock.return_value = 'ProLiant DL380 G8'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'The specified operation is not supported '
-                                'on current platform.',
-                                self.client.do_disk_erase,
-                                'SSD', None)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'The specified operation is not supported '
+                               'on current platform.',
+                               self.client.do_disk_erase,
+                               'SSD', None)
 
     @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_do_one_button_secure_erase(self, call_mock):
@@ -949,19 +946,19 @@ class IloClientTestCase(testtools.TestCase):
     def test_do_one_button_secure_erase_gen9(self, get_product_mock):
         self.client.model = 'Gen9'
         get_product_mock.return_value = 'ProLiant BL460c Gen9'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'The specified operation is not supported '
-                                'on current platform.',
-                                self.client.do_one_button_secure_erase)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'The specified operation is not supported '
+                               'on current platform.',
+                               self.client.do_one_button_secure_erase)
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     def test_do_one_button_secure_erase_gen8(self, get_product_mock):
         self.client.model = 'Gen8'
         get_product_mock.return_value = 'ProLiant DL380 G8'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'The specified operation is not supported '
-                                'on current platform.',
-                                self.client.do_one_button_secure_erase)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'The specified operation is not supported '
+                               'on current platform.',
+                               self.client.do_one_button_secure_erase)
 
     @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_has_disk_erase_completed(self, call_mock):
@@ -972,19 +969,19 @@ class IloClientTestCase(testtools.TestCase):
     def test_has_disk_erase_completed_gen9(self, get_product_mock):
         self.client.model = 'Gen9'
         get_product_mock.return_value = 'ProLiant BL460c Gen9'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'The specified operation is not supported '
-                                'on current platform.',
-                                self.client.has_disk_erase_completed)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'The specified operation is not supported '
+                               'on current platform.',
+                               self.client.has_disk_erase_completed)
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     def test_has_disk_erase_completed_gen8(self, get_product_mock):
         self.client.model = 'Gen8'
         get_product_mock.return_value = 'ProLiant DL380 G8'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'The specified operation is not supported '
-                                'on current platform.',
-                                self.client.has_disk_erase_completed)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'The specified operation is not supported '
+                               'on current platform.',
+                               self.client.has_disk_erase_completed)
 
     @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_create_raid_configuration(self, call_mock):
@@ -1000,11 +997,11 @@ class IloClientTestCase(testtools.TestCase):
         ld1 = {"size_gb": 150, "raid_level": '0', "is_root_volume": True}
         raid_config = {"logical_disks": [ld1]}
         get_product_mock.return_value = 'ProLiant BL460c Gen9'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                '`create_raid_configuration` is not supported '
-                                'on ProLiant BL460c Gen9',
-                                self.client.create_raid_configuration,
-                                raid_config)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               '`create_raid_configuration` is not supported '
+                               'on ProLiant BL460c Gen9',
+                               self.client.create_raid_configuration,
+                               raid_config)
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     def test_create_raid_configuration_gen8(self, get_product_mock):
@@ -1012,11 +1009,11 @@ class IloClientTestCase(testtools.TestCase):
         ld1 = {"size_gb": 150, "raid_level": '0', "is_root_volume": True}
         raid_config = {"logical_disks": [ld1]}
         get_product_mock.return_value = 'ProLiant DL380 G8'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                '`create_raid_configuration` is not supported '
-                                'on ProLiant DL380 G8',
-                                self.client.create_raid_configuration,
-                                raid_config)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               '`create_raid_configuration` is not supported '
+                               'on ProLiant DL380 G8',
+                               self.client.create_raid_configuration,
+                               raid_config)
 
     @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_read_raid_configuration(self, call_mock):
@@ -1032,11 +1029,11 @@ class IloClientTestCase(testtools.TestCase):
         ld1 = {"size_gb": 150, "raid_level": '0', "is_root_volume": True}
         raid_config = {"logical_disks": [ld1]}
         get_product_mock.return_value = 'ProLiant BL460c Gen9'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                '`read_raid_configuration` is not supported '
-                                'on ProLiant BL460c Gen9',
-                                self.client.read_raid_configuration,
-                                raid_config)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               '`read_raid_configuration` is not supported '
+                               'on ProLiant BL460c Gen9',
+                               self.client.read_raid_configuration,
+                               raid_config)
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     def test_read_raid_configuration_gen8(self, get_product_mock):
@@ -1044,11 +1041,11 @@ class IloClientTestCase(testtools.TestCase):
         ld1 = {"size_gb": 150, "raid_level": '0', "is_root_volume": True}
         raid_config = {"logical_disks": [ld1]}
         get_product_mock.return_value = 'ProLiant DL380 G8'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                '`read_raid_configuration` is not supported '
-                                'on ProLiant DL380 G8',
-                                self.client.read_raid_configuration,
-                                raid_config)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               '`read_raid_configuration` is not supported '
+                               'on ProLiant DL380 G8',
+                               self.client.read_raid_configuration,
+                               raid_config)
 
     @mock.patch.object(ris.RISOperations, 'eject_virtual_media')
     def test_eject_virtual_media_gen9(self, eject_virtual_media_mock):
@@ -1317,7 +1314,6 @@ class IloClientTestCase(testtools.TestCase):
     @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_essential_prop_snmp_false_local_gb_0(self, call_mock,
                                                       snmp_mock):
-
         self.client.model = 'Gen9'
         snmp_credentials = {'auth_user': 'user',
                             'auth_prot_pp': '1234',
@@ -1348,9 +1344,9 @@ class IloClientTestCase(testtools.TestCase):
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     def test_inject_nmi_gen8(self, product_mock):
         self.client.model = 'Gen8'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'not supported',
-                                self.client.inject_nmi)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'not supported',
+                               self.client.inject_nmi)
 
     @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_host_post_state(self, call_mock):
@@ -1383,9 +1379,9 @@ class IloClientTestCase(testtools.TestCase):
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     def test_get_bios_settings_result_gen8(self, product_mock):
         self.client.model = 'Gen8'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'not supported',
-                                self.client.get_bios_settings_result)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'not supported',
+                               self.client.get_bios_settings_result)
 
     @mock.patch.object(client.IloClient.cls, '_call_method')
     def test_get_available_disk_types(self, call_mock):
@@ -1396,17 +1392,17 @@ class IloClientTestCase(testtools.TestCase):
     def test_get_available_disk_types_gen9(self, get_product_mock):
         self.client.model = 'Gen9'
         get_product_mock.return_value = 'ProLiant BL460c Gen9'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'not supported',
-                                self.client.get_available_disk_types)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'not supported',
+                               self.client.get_available_disk_types)
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     def test_get_available_disk_types_gen8(self, get_product_mock):
         self.client.model = 'Gen8'
         get_product_mock.return_value = 'ProLiant DL380 G8'
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'not supported',
-                                self.client.get_available_disk_types)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'not supported',
+                               self.client.get_available_disk_types)
 
 
 class IloRedfishClientTestCase(testtools.TestCase):
@@ -1453,7 +1449,7 @@ class IloRedfishClientTestCase(testtools.TestCase):
         validate_method_calls(
             more_missed_operations, ('arg1', 'arg2'),
             even_more_missed_operations)
-        if(len(even_more_missed_operations) == 1):
+        if (len(even_more_missed_operations) == 1):
             self.assertEqual('set_iscsi_info',
                              even_more_missed_operations[0])
         else:

@@ -12,9 +12,10 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-import unittest
 
-import mock
+
+import unittest
+from unittest import mock
 
 from proliantutils.ilo.snmp import snmp_cpqdisk_sizes as snmp
 from proliantutils.tests.ilo.snmp import snmp_sample_output

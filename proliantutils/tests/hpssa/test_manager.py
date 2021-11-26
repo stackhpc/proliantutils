@@ -13,8 +13,8 @@
 # under the License.
 
 import time
+from unittest import mock
 
-import mock
 import testtools
 
 from proliantutils import exception

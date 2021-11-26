@@ -14,8 +14,8 @@
 #    under the License.
 
 import json
+from unittest import mock
 
-import mock
 import sushy
 import testtools
 

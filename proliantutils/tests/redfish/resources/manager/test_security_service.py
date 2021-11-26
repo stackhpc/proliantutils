@@ -13,8 +13,8 @@
 #    under the License.
 
 import json
+from unittest import mock
 
-import mock
 import testtools
 
 from proliantutils.redfish.resources.manager import security_service

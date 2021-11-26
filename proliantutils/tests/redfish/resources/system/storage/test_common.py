@@ -13,8 +13,9 @@
 # under the License.
 __author__ = 'HPE'
 
+from unittest import mock
+
 import ddt
-import mock
 import sushy
 import testtools
 

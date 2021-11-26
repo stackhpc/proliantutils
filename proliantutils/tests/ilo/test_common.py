@@ -16,9 +16,9 @@
 
 import time
 import unittest
+from unittest import mock
 
 import ddt
-import mock
 
 from proliantutils import exception
 from proliantutils.ilo import common

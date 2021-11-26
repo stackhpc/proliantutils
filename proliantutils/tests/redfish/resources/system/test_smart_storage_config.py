@@ -14,8 +14,8 @@
 #    under the License.
 
 import json
+from unittest import mock
 
-import mock
 import testtools
 
 from proliantutils import exception
@@ -179,7 +179,7 @@ class HPESmartStorageConfigTestCase(testtools.TestCase):
         type(self.ssc_inst).physical_drives = mock.PropertyMock(
             return_value=physical_drive)
         message_mock.return_value = False, 'err_mesg'
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             exception.IloError,
             'Failed to perform the create_raid operation successfully',
             self.ssc_inst.read_raid, ld1['controller'])

@@ -19,9 +19,9 @@ import collections
 import io
 import json
 import os
+from unittest import mock
 
 import ddt
-import mock
 import sushy
 from sushy.resources.system import system
 import testtools

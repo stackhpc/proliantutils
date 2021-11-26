@@ -18,10 +18,10 @@
 import json
 import re
 import unittest
+from unittest import mock
 import xml.etree.ElementTree as ET
 
 import ddt
-import mock
 import requests
 from requests.packages import urllib3
 from requests.packages.urllib3 import exceptions as urllib3_exceptions
@@ -328,9 +328,13 @@ class IloRibclTestCase(unittest.TestCase):
             self, raw_boot_mode_value, expected_boot_mode_value,
             _execute_command_mock):
         # | GIVEN |
-        ret_val = {'GET_SUPPORTED_BOOT_MODE':
-                   {'SUPPORTED_BOOT_MODE':
-                    {'VALUE': raw_boot_mode_value}}}
+        ret_val = {
+            'GET_SUPPORTED_BOOT_MODE': {
+                'SUPPORTED_BOOT_MODE': {
+                    'VALUE': raw_boot_mode_value
+                }
+            }
+        }
         _execute_command_mock.return_value = ret_val
         # | WHEN |
         actual_val = self.ilo.get_supported_boot_mode()
@@ -720,17 +724,17 @@ class IloRibclTestCase(unittest.TestCase):
         json_data = json.loads(data)
         health_data_mock.return_value = json_data
         expected_properties = {'macs': {
-                               u'Port 4': u'40:a8:f0:1e:86:77',
-                               u'Port 3': u'40:a8:f0:1e:86:76',
-                               u'Port 2': u'40:a8:f0:1e:86:75',
-                               u'Port 1': u'40:a8:f0:1e:86:74'
-                               },
-                               'properties': {
-                               'memory_mb': 32768,
-                               'cpu_arch': 'x86_64',
-                               'local_gb': 98,
-                               'cpus': 32}
-                               }
+            u'Port 4': u'40:a8:f0:1e:86:77',
+            u'Port 3': u'40:a8:f0:1e:86:76',
+            u'Port 2': u'40:a8:f0:1e:86:75',
+            u'Port 1': u'40:a8:f0:1e:86:74'
+        },
+            'properties': {
+                'memory_mb': 32768,
+                'cpu_arch': 'x86_64',
+                'local_gb': 98,
+                'cpus': 32}
+        }
         properties = self.ilo.get_essential_properties()
         self.assertIsInstance(properties, dict)
         self.assertIn('macs', properties)
@@ -1056,50 +1060,50 @@ class IloRibclTestCaseBeforeRisSupport(unittest.TestCase):
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     def test_inject_nmi(self, product_name_mock):
         product_name_mock.return_value = constants.GET_PRODUCT_NAME
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'ProLiant DL380 G7',
-                                self.ilo.inject_nmi)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'ProLiant DL380 G7',
+                               self.ilo.inject_nmi)
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     def test_get_host_post_state(self, product_name_mock):
         product_name_mock.return_value = constants.GET_PRODUCT_NAME
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'ProLiant DL380 G7',
-                                self.ilo.get_host_post_state)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'ProLiant DL380 G7',
+                               self.ilo.get_host_post_state)
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     def test_read_raid_configuration(self, product_name_mock):
         ld1 = {"size_gb": 150, "raid_level": '0', "is_root_volume": True}
         raid_config = {"logical_disks": [ld1]}
         product_name_mock.return_value = constants.GET_PRODUCT_NAME
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'ProLiant DL380 G7',
-                                self.ilo.read_raid_configuration,
-                                raid_config)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'ProLiant DL380 G7',
+                               self.ilo.read_raid_configuration,
+                               raid_config)
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     def test_delete_raid_configuration(self, product_name_mock):
         product_name_mock.return_value = constants.GET_PRODUCT_NAME
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'ProLiant DL380 G7',
-                                self.ilo.delete_raid_configuration)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'ProLiant DL380 G7',
+                               self.ilo.delete_raid_configuration)
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     def test_create_raid_configuration(self, product_name_mock):
         ld1 = {"size_gb": 150, "raid_level": '0', "is_root_volume": True}
         raid_config = {"logical_disks": [ld1]}
         product_name_mock.return_value = constants.GET_PRODUCT_NAME
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'ProLiant DL380 G7',
-                                self.ilo.create_raid_configuration,
-                                raid_config)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'ProLiant DL380 G7',
+                               self.ilo.create_raid_configuration,
+                               raid_config)
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_product_name')
     def test_get_bios_settings_result(self, product_name_mock):
         product_name_mock.return_value = constants.GET_PRODUCT_NAME
-        self.assertRaisesRegexp(exception.IloCommandNotSupportedError,
-                                'ProLiant DL380 G7',
-                                self.ilo.get_bios_settings_result)
+        self.assertRaisesRegex(exception.IloCommandNotSupportedError,
+                               'ProLiant DL380 G7',
+                               self.ilo.get_bios_settings_result)
 
 
 if __name__ == '__main__':

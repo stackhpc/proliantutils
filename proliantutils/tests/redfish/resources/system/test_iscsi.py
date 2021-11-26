@@ -14,9 +14,9 @@
 #    under the License.
 
 import json
+from unittest import mock
 
 import ddt
-import mock
 import testtools
 
 from proliantutils.redfish.resources.system import iscsi

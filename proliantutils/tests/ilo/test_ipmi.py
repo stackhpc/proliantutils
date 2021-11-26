@@ -17,8 +17,7 @@
 
 import subprocess
 import unittest
-
-import mock
+from unittest import mock
 
 from proliantutils.ilo import ipmi
 from proliantutils.tests.ilo import ipmi_sample_outputs as constants
