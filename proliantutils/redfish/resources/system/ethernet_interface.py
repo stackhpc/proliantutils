@@ -14,12 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import sushy
 from sushy.resources import base
 from sushy.resources.system import ethernet_interface
 from sushy import utils as sushy_utils
-
-
-from proliantutils.redfish.resources.system import constants as sys_cons
 
 
 class EthernetInterface(ethernet_interface.EthernetInterface):
@@ -50,8 +48,8 @@ class EthernetInterfaceCollection(base.ResourceCollectionBase):
         for eth in self.get_members():
             if eth.mac_address is not None:
                 if (eth.status is not None
-                        and eth.status.health == sys_cons.HEALTH_OK
-                        and eth.status.state == sys_cons.HEALTH_STATE_ENABLED):
+                        and eth.status.health == sushy.HEALTH_OK
+                        and eth.status.state == sushy.STATE_ENABLED):
                     mac_dict.update(
                         {'Port ' + eth.identity: eth.mac_address})
         return mac_dict

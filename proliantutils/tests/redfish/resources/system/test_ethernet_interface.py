@@ -16,9 +16,9 @@
 import json
 
 import mock
+import sushy
 import testtools
 
-from proliantutils.redfish.resources.system import constants as sys_cons
 from proliantutils.redfish.resources.system import ethernet_interface
 
 
@@ -48,9 +48,8 @@ class EthernetInterfaceTestCase(testtools.TestCase):
         self.assertEqual(
             '12:44:6A:3B:04:11', self.sys_eth.permanent_mac_address)
         self.assertEqual('12:44:6A:3B:04:11', self.sys_eth.mac_address)
-        self.assertEqual(sys_cons.HEALTH_STATE_ENABLED,
-                         self.sys_eth.status.state)
-        self.assertEqual(sys_cons.HEALTH_OK, self.sys_eth.status.health)
+        self.assertEqual(sushy.STATE_ENABLED, self.sys_eth.status.state)
+        self.assertEqual(sushy.HEALTH_OK, self.sys_eth.status.health)
         self.assertEqual(1000, self.sys_eth.speed_mbps)
 
 

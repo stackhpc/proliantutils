@@ -25,7 +25,6 @@ from OpenSSL.crypto import FILETYPE_ASN1
 from OpenSSL.crypto import load_certificate
 from six.moves.urllib import parse
 import sushy
-from sushy.resources.system import mappings as sushy_map
 from sushy import utils
 
 from proliantutils import exception
@@ -126,6 +125,15 @@ _CERTIFICATE_PATTERN = (
     r'-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----')
 
 LOG = log.get_logger(__name__)
+
+# Copied from ironic/drivers/modules/redfish/inspect.py
+CPU_ARCH_MAP = {
+    sushy.PROCESSOR_ARCH_x86: 'x86_64',
+    sushy.PROCESSOR_ARCH_IA_64: 'ia64',
+    sushy.PROCESSOR_ARCH_ARM: 'arm',
+    sushy.PROCESSOR_ARCH_MIPS: 'mips',
+    sushy.PROCESSOR_ARCH_OEM: 'oem'
+}
 
 
 class RedfishOperations(operations.IloOperations):
@@ -1237,8 +1245,8 @@ class RedfishOperations(operations.IloOperations):
             # local_gb = sushy_system.storage_summary
             prop = {'memory_mb': (sushy_system.memory_summary.size_gib * 1024),
                     'cpus': sushy_system.processors.summary.count,
-                    'cpu_arch': sushy_map.PROCESSOR_ARCH_VALUE_MAP_REV.get(
-                    sushy_system.processors.summary.architecture),
+                    'cpu_arch': CPU_ARCH_MAP.get(
+                        sushy_system.processors.summary.architecture),
                     'local_gb': common_storage.get_local_gb(sushy_system)}
             return {'properties': prop,
                     'macs': sushy_system.ethernet_interfaces.summary}

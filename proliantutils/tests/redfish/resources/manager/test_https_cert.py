@@ -110,16 +110,20 @@ class HttpsCertTestCase(testtools.TestCase):
             'The Redfish controller failed to import certificate. Error',
             self.https_cert_inst.import_certificate, 'certificate')
 
+    @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(https_cert.HttpsCert, 'get_generate_csr_refresh',
                        autospec=True)
-    def test_wait_for_csr_to_create_ok(self, get_generate_csr_refresh_mock):
+    def test_wait_for_csr_to_create_ok(self, get_generate_csr_refresh_mock,
+                                       sleep_mock):
         self.cert_sign_request = 'certificate'
         self.https_cert_inst.wait_for_csr_to_create()
         self.assertTrue(get_generate_csr_refresh_mock.called)
 
+    @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(https_cert.HttpsCert, 'get_generate_csr_refresh',
                        autospec=True)
-    def test_wait_for_csr_to_create_fails(self, get_generate_csr_refresh_mock):
+    def test_wait_for_csr_to_create_fails(self, get_generate_csr_refresh_mock,
+                                          sleep_mock):
         exc = exception.IloError('error')
         get_generate_csr_refresh_mock.side_effect = exc
         self.assertRaises(exception.IloError,
