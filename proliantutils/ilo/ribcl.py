@@ -1,3 +1,4 @@
+# Copyright 2022 Hewlett Packard Enterprise Development Company, L.P.
 # Copyright 2018 Hewlett-Packard Development Company, L.P.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -34,6 +35,7 @@ from proliantutils.ilo import firmware_controller
 from proliantutils.ilo import mappings
 from proliantutils.ilo import operations
 from proliantutils import log
+from proliantutils import utils
 
 
 POWER_STATE = {
@@ -423,6 +425,10 @@ class RIBCLOperations(operations.IloOperations):
             'DEVICE': device.upper(),
             'IMAGE_URL': url,
         }
+
+        # Validate url
+        utils.validate_href(url)
+
         data = self._execute_command(
             'INSERT_VIRTUAL_MEDIA', 'RIB_INFO', 'write', dic)
         return data

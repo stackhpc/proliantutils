@@ -1,3 +1,4 @@
+# Copyright 2022 Hewlett Packard Enterprise Development Company, L.P.
 # Copyright 2015 Hewlett-Packard Development Company, L.P.
 # All Rights Reserved.
 #
@@ -837,7 +838,9 @@ class IloRisTestCase(testtools.TestCase):
 
     @mock.patch.object(ris.RISOperations, '_rest_patch')
     @mock.patch.object(ris.RISOperations, '_get_vm_device_status')
-    def test_insert_virtual_media(self, get_vm_device_mock, patch_mock):
+    @mock.patch.object(utils, 'validate_href')
+    def test_insert_virtual_media(
+            self, validate_href_mock, get_vm_device_mock, patch_mock):
         vm_uri = '/rest/v1/Managers/1/VirtualMedia/2'
 
         cdrom_resp = json.loads(ris_outputs.RESP_VM_STATUS_CDROM_EMPTY)
@@ -852,11 +855,14 @@ class IloRisTestCase(testtools.TestCase):
                                          device='CDROM')
         get_vm_device_mock.assert_called_once_with('CDROM')
         patch_mock.assert_called_once_with(vm_uri, None, vm_patch)
+        validate_href_mock.assert_called_once_with('http://1.1.1.1/cdrom.iso')
 
     @mock.patch.object(ris.RISOperations, '_rest_patch')
     @mock.patch.object(ris.RISOperations, 'eject_virtual_media')
     @mock.patch.object(ris.RISOperations, '_get_vm_device_status')
+    @mock.patch.object(utils, 'validate_href')
     def test_insert_virtual_media_media_attached(self,
+                                                 validate_href_mock,
                                                  get_vm_device_mock,
                                                  eject_virtual_media_mock,
                                                  patch_mock):
@@ -875,10 +881,13 @@ class IloRisTestCase(testtools.TestCase):
         get_vm_device_mock.assert_called_once_with('CDROM')
         eject_virtual_media_mock.assert_called_once_with('CDROM')
         patch_mock.assert_called_once_with(vm_uri, None, vm_patch)
+        validate_href_mock.assert_called_once_with('http://1.1.1.1/cdrom.iso')
 
     @mock.patch.object(ris.RISOperations, '_rest_patch')
     @mock.patch.object(ris.RISOperations, '_get_vm_device_status')
-    def test_insert_virtual_media_fail(self, get_vm_device_mock, patch_mock):
+    @mock.patch.object(utils, 'validate_href')
+    def test_insert_virtual_media_fail(
+            self, validate_href_mock, get_vm_device_mock, patch_mock):
         vm_uri = '/rest/v1/Managers/1/VirtualMedia/2'
 
         cdrom_resp = json.loads(ris_outputs.RESP_VM_STATUS_CDROM_EMPTY)
@@ -894,6 +903,7 @@ class IloRisTestCase(testtools.TestCase):
                           'http://1.1.1.1/cdrom.iso', device='CDROM')
         get_vm_device_mock.assert_called_once_with('CDROM')
         patch_mock.assert_called_once_with(vm_uri, None, vm_patch)
+        validate_href_mock.assert_called_once_with('http://1.1.1.1/cdrom.iso')
 
     @mock.patch.object(ris.RISOperations, '_rest_patch')
     @mock.patch.object(ris.RISOperations, '_get_vm_device_status')

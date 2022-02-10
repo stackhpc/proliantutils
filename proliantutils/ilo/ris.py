@@ -1,4 +1,4 @@
-# Copyright 2018 Hewlett Packard Enterprise Development Company, L.P.
+# Copyright 2018-2022 Hewlett Packard Enterprise Development Company, L.P.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -1506,6 +1506,9 @@ class RISOperations(rest.RestConnectorBase, operations.IloOperations):
         :raises: IloCommandNotSupportedError, if the command is not supported
                  on the server.
         """
+        # Validate url
+        utils.validate_href(url)
+
         response, vm_device_uri = self._get_vm_device_status(device)
 
         # Eject media if there is one. RIBCL was tolerant enough to overwrite
