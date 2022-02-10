@@ -1,3 +1,4 @@
+# Copyright 2022 Hewlett Packard Enterprise Development LP
 # Copyright 2014 Hewlett-Packard Development Company, L.P.
 # All Rights Reserved.
 #
@@ -32,6 +33,7 @@ from proliantutils.ilo import common
 from proliantutils.ilo import constants as cons
 from proliantutils.ilo import ribcl
 from proliantutils.tests.ilo import ribcl_sample_outputs as constants
+from proliantutils import utils
 
 
 class MaskedRequestDataTestCase(unittest.TestCase):
@@ -275,11 +277,13 @@ class IloRibclTestCase(unittest.TestCase):
         self.assertTrue(request_ilo_mock.called)
 
     @mock.patch.object(ribcl.RIBCLOperations, '_request_ilo')
-    def test_insert_virtual_media(self, request_ilo_mock):
+    @mock.patch.object(utils, 'validate_href')
+    def test_insert_virtual_media(self, validate_href_mock, request_ilo_mock):
         request_ilo_mock.return_value = constants.INSERT_VIRTUAL_MEDIA_XML
         result = self.ilo.insert_virtual_media('any_url', 'floppy')
         self.assertIsNone(result)
         self.assertTrue(request_ilo_mock.called)
+        validate_href_mock.assert_called_once_with('any_url')
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_vm_status')
     @mock.patch.object(ribcl.RIBCLOperations, '_request_ilo')
@@ -1032,11 +1036,13 @@ class IloRibclTestCaseBeforeRisSupport(unittest.TestCase):
         self.assertTrue(request_ilo_mock.called)
 
     @mock.patch.object(ribcl.IloClient, '_request_ilo')
-    def test_insert_virtual_media(self, request_ilo_mock):
+    @mock.patch.object(utils, 'validate_href')
+    def test_insert_virtual_media(self, validate_href_mock, request_ilo_mock):
         request_ilo_mock.return_value = constants.INSERT_VIRTUAL_MEDIA_XML
         result = self.ilo.insert_virtual_media('any_url', 'floppy')
         self.assertIsNone(result)
         self.assertTrue(request_ilo_mock.called)
+        validate_href_mock.assert_called_once_with('any_url')
 
     @mock.patch.object(ribcl.RIBCLOperations, 'get_vm_status')
     @mock.patch.object(ribcl.IloClient, '_request_ilo')

@@ -1,4 +1,4 @@
-# Copyright 2019 Hewlett Packard Enterprise Development LP
+# Copyright 2019-2022 Hewlett Packard Enterprise Development LP
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -44,6 +44,7 @@ from proliantutils.redfish.resources.system.storage \
     import common as common_storage
 from proliantutils.redfish.resources.system import system as pro_sys
 from proliantutils.redfish.resources.system import tls_config
+from proliantutils import utils as common_utils
 
 
 @ddt.ddt
@@ -334,7 +335,9 @@ class RedfishOperationsTestCase(testtools.TestCase):
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
     @mock.patch.object(virtual_media.VirtualMedia, 'eject_media')
     @mock.patch.object(virtual_media.VirtualMedia, 'insert_media')
-    def test_insert_virtual_media(self, insert_mock, eject_mock, manager_mock):
+    @mock.patch.object(common_utils, 'validate_href')
+    def test_insert_virtual_media(
+            self, validate_href_mock, insert_mock, eject_mock, manager_mock):
         manager_mock.return_value, vmedia_collection_json, vmedia_json = (
             self._setup_virtual_media())
         self.conn.get.return_value.json.side_effect = [
@@ -345,12 +348,14 @@ class RedfishOperationsTestCase(testtools.TestCase):
 
         self.assertFalse(eject_mock.called)
         insert_mock.assert_called_once_with(url)
+        validate_href_mock.assert_called_once_with(url)
 
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
     @mock.patch.object(virtual_media.VirtualMedia, 'eject_media')
     @mock.patch.object(virtual_media.VirtualMedia, 'insert_media')
-    def test_insert_virtual_media_floppy(self, insert_mock, eject_mock,
-                                         manager_mock):
+    @mock.patch.object(common_utils, 'validate_href')
+    def test_insert_virtual_media_floppy(
+            self, validate_href_mock, insert_mock, eject_mock, manager_mock):
         manager_mock.return_value, vmedia_collection_json, vmedia_json = (
             self._setup_virtual_media())
         self.conn.get.return_value.json.side_effect = [
@@ -361,12 +366,14 @@ class RedfishOperationsTestCase(testtools.TestCase):
 
         self.assertFalse(eject_mock.called)
         insert_mock.assert_called_once_with(url)
+        validate_href_mock.assert_called_once_with(url)
 
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
     @mock.patch.object(virtual_media.VirtualMedia, 'eject_media')
     @mock.patch.object(virtual_media.VirtualMedia, 'insert_media')
-    def test_insert_virtual_media_inserted(self, insert_mock, eject_mock,
-                                           manager_mock):
+    @mock.patch.object(common_utils, 'validate_href')
+    def test_insert_virtual_media_inserted(
+            self, validate_href_mock, insert_mock, eject_mock, manager_mock):
         manager_mock.return_value, vmedia_collection_json, vmedia_json = (
             self._setup_virtual_media())
         self.conn.get.return_value.json.side_effect = [
@@ -377,12 +384,14 @@ class RedfishOperationsTestCase(testtools.TestCase):
 
         eject_mock.assert_called_once_with()
         insert_mock.assert_called_once_with(url)
+        validate_href_mock.assert_called_once_with(url)
 
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')
     @mock.patch.object(virtual_media.VirtualMedia, 'eject_media')
     @mock.patch.object(virtual_media.VirtualMedia, 'insert_media')
-    def test_insert_virtual_media_fail(self, insert_mock, eject_mock,
-                                       manager_mock):
+    @mock.patch.object(common_utils, 'validate_href')
+    def test_insert_virtual_media_fail(
+            self, validate_href_mock, insert_mock, eject_mock, manager_mock):
         manager_mock.return_value, vmedia_collection_json, vmedia_json = (
             self._setup_virtual_media())
         insert_mock.side_effect = sushy.exceptions.SushyError
@@ -395,6 +404,7 @@ class RedfishOperationsTestCase(testtools.TestCase):
         self.assertRaisesRegex(exception.IloError, msg,
                                self.rf_client.insert_virtual_media,
                                url, 'CDROM')
+        validate_href_mock.assert_called_once_with(url)
 
     @mock.patch.object(virtual_media.VirtualMedia, 'set_vm_status')
     @mock.patch.object(redfish.RedfishOperations, '_get_sushy_manager')

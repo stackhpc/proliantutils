@@ -1,4 +1,4 @@
-# Copyright 2016 Hewlett Packard Enterprise Company, L.P.
+# Copyright 2016-2022 Hewlett Packard Enterprise Development LP
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -256,6 +256,14 @@ class UtilsTestCase(testtools.TestCase):
     def test_validate_href_error(self, head_mock):
         href = 'http://1.2.3.4/abc.iso'
         head_mock.side_effect = requests.ConnectionError()
+        self.assertRaises(exception.ImageRefValidationFailed,
+                          utils.validate_href, href)
+        head_mock.assert_called_once_with(href)
+
+    @mock.patch.object(requests, 'head', autospec=True)
+    def test_validate_href_error_no_base_image(self, head_mock):
+        href = 'http://1.2.3.4/'
+        head_mock.return_value.status_code = http_client.OK
         self.assertRaises(exception.ImageRefValidationFailed,
                           utils.validate_href, href)
         head_mock.assert_called_once_with(href)
