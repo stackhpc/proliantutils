@@ -1,4 +1,4 @@
-# Copyright 2016 Hewlett Packard Enterprise Company, L.P.
+# Copyright 2016-2022 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -16,7 +16,9 @@
 Non-iLO related utilities and helper functions.
 """
 import hashlib
+import os
 import re
+from urllib import parse
 
 import requests
 import six
@@ -150,6 +152,12 @@ def validate_href(image_href):
                 image_href=image_href,
                 reason=("Got HTTP code %s instead of 200 in response to "
                         "HEAD request." % response.status_code))
+
+        path = parse.urlsplit(image_href).path
+        if os.path.basename(path) == '':
+            raise exception.ImageRefValidationFailed(
+                image_href=image_href,
+                reason=("Given URL is not reachable."))
     except requests.RequestException as e:
         raise exception.ImageRefValidationFailed(image_href=image_href,
                                                  reason=e)

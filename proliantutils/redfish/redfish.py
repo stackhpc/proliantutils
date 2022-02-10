@@ -1,4 +1,4 @@
-# Copyright 2018 Hewlett Packard Enterprise Development LP
+# Copyright 2018-2022 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -444,6 +444,8 @@ class RedfishOperations(operations.IloOperations):
         :raises: IloError, on an error from iLO.
         :raises: IloInvalidInputError, if the device is not valid.
         """
+        # Validate url
+        common_utils.validate_href(url)
         self._validate_virtual_media(device)
         manager = self._get_sushy_manager(PROLIANT_MANAGER_ID)
         try:
