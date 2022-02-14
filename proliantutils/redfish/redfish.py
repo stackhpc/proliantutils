@@ -894,11 +894,13 @@ class RedfishOperations(operations.IloOperations):
             security_dashboard = (
                 sushy_manager.securityservice.securitydashboard)
             security_params = (
-                sushy_manager.securityservice.securityparamscollectionuri)
+                security_dashboard.securityparamscollectionuri)
+            if security_dashboard.server_configuration_lock_status:
+                sec_capabilities.update(
+                    {'server_configuration_lock_status': (
+                     security_dashboard.server_configuration_lock_status)})
             sec_capabilities.update(
-                {'server_configuration_lock_status': (
-                 security_dashboard.server_configuration_lock_status),
-                 'overall_security_status': (
+                {'overall_security_status': (
                  security_dashboard.overall_status)})
             security_parameters = {}
             param_members = security_params.get_members()

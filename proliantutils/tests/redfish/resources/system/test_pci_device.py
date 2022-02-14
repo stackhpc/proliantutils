@@ -119,6 +119,10 @@ class PCIDeviceCollectionTestCase(testtools.TestCase):
                 'pci_device1.json')
         with open(path, 'r') as f:
             val.append(json.loads(f.read()))
+        path = ('proliantutils/tests/redfish/json_samples/'
+                'pci_device2.json')
+        with open(path, 'r') as f:
+            val.append(json.loads(f.read()))
         self.conn.get.return_value.json.side_effect = val
         actual_capacity = self.sys_pci_col.max_nic_capacity
         expected = '1Gb'

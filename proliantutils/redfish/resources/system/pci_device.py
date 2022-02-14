@@ -1,4 +1,4 @@
-# Copyright 2017 Hewlett Packard Enterprise Development LP
+# Copyright 2017-2022 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -40,10 +40,11 @@ class PCIDevice(base.ResourceBase):
     @property
     @sushy_utils.cache_it
     def nic_capacity(self):
-        for item in self.name.split():
-            if 'Gb' in item:
-                capacity = item.strip('Gb')
-                return int(capacity) if capacity.isdigit() else 0
+        if self.name:
+            for item in self.name.split():
+                if 'Gb' in item:
+                    capacity = item.strip('Gb')
+                    return int(capacity) if capacity.isdigit() else 0
         return 0
 
 
