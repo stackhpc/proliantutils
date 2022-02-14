@@ -1,4 +1,4 @@
-# Copyright 2017 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -20,7 +20,6 @@ from sushy import utils as sushy_utils
 from proliantutils import log
 from proliantutils.redfish.resources.manager import https_cert
 from proliantutils.redfish.resources.manager import security_dashboard
-from proliantutils.redfish.resources.manager import security_params
 
 
 LOG = log.get_logger(__name__)
@@ -31,9 +30,6 @@ class SecurityService(base.ResourceBase):
     identity = base.Field('Id', required=True)
     """The identity for the instance."""
 
-    security_params_collection_uri = (
-        base.Field(["Links", "SecurityParams", "@odata.id"],
-                   required=True))
     security_dashboard_uri = (
         base.Field(["Links", "SecurityDashboard", "@odata.id"],
                    required=True))
@@ -50,17 +46,6 @@ class SecurityService(base.ResourceBase):
         """
         return security_dashboard.SecurityDashboard(
             self._conn, self.security_dashboard_uri,
-            redfish_version=self.redfish_version)
-
-    @property
-    @sushy_utils.cache_it
-    def securityparamscollectionuri(self):
-        """Gets the list of instances for security params
-
-        :returns: the list of instances of security params.
-        """
-        return security_params.SecurityParamsCollection(
-            self._conn, self.security_params_collection_uri,
             redfish_version=self.redfish_version)
 
     @property
