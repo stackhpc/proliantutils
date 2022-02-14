@@ -1,4 +1,4 @@
-# Copyright 2017 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -15,6 +15,9 @@
 __author__ = 'HPE'
 
 from sushy.resources import base
+from sushy import utils as sushy_utils
+
+from proliantutils.redfish.resources.manager import security_params
 
 
 class SecurityDashboard(base.ResourceBase):
@@ -26,6 +29,18 @@ class SecurityDashboard(base.ResourceBase):
     """Overall security status of the server"""
 
     server_configuration_lock_status = (
-        base.Field('ServerConfigurationLockStatus', required=True))
+        base.Field('ServerConfigurationLockStatus'))
 
-    security_param_uri = base.Field(["SecurityParameters", "@odata.id"])
+    security_params_collection_uri = (
+        base.Field(["SecurityParameters", "@odata.id"], required=True))
+
+    @property
+    @sushy_utils.cache_it
+    def securityparamscollectionuri(self):
+        """Gets the list of instances for security params
+
+        :returns: the list of instances of security params.
+        """
+        return security_params.SecurityParamsCollection(
+            self._conn, self.security_params_collection_uri,
+            redfish_version=self.redfish_version)

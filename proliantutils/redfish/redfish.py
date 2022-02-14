@@ -1,4 +1,4 @@
-# Copyright 2018 Hewlett Packard Enterprise Development LP
+# Copyright 2018-2022 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -892,11 +892,13 @@ class RedfishOperations(operations.IloOperations):
             security_dashboard = (
                 sushy_manager.securityservice.securitydashboard)
             security_params = (
-                sushy_manager.securityservice.securityparamscollectionuri)
+                security_dashboard.securityparamscollectionuri)
+            if security_dashboard.server_configuration_lock_status:
+                sec_capabilities.update(
+                    {'server_configuration_lock_status': (
+                     security_dashboard.server_configuration_lock_status)})
             sec_capabilities.update(
-                {'server_configuration_lock_status': (
-                 security_dashboard.server_configuration_lock_status),
-                 'overall_security_status': (
+                {'overall_security_status': (
                  security_dashboard.overall_status)})
             security_parameters = {}
             param_members = security_params.get_members()
