@@ -1,4 +1,4 @@
-# Copyright 2017 Hewlett Packard Enterprise Development LP
+# Copyright 2017-2022 Hewlett Packard Enterprise Development LP
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -113,6 +113,10 @@ class PCIDeviceCollectionTestCase(testtools.TestCase):
             val.append(json.loads(f.read()))
         path = ('proliantutils/tests/redfish/json_samples/'
                 'pci_device1.json')
+        with open(path, 'r') as f:
+            val.append(json.loads(f.read()))
+        path = ('proliantutils/tests/redfish/json_samples/'
+                'pci_device2.json')
         with open(path, 'r') as f:
             val.append(json.loads(f.read()))
         self.conn.get.return_value.json.side_effect = val
