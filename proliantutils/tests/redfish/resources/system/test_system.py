@@ -1,4 +1,4 @@
-# Copyright 2018 Hewlett Packard Enterprise Development LP
+# Copyright 2018-2022 Hewlett Packard Enterprise Development LP
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -40,6 +40,7 @@ class HPESystemTestCase(testtools.TestCase):
     def setUp(self):
         super(HPESystemTestCase, self).setUp()
         self.conn = mock.MagicMock()
+        self.conn.get.return_value.headers = {'Allow': 'GET,HEAD'}
         with open('proliantutils/tests/redfish/'
                   'json_samples/system.json', 'r') as f:
             system_json = json.loads(f.read())
@@ -181,7 +182,8 @@ class HPESystemTestCase(testtools.TestCase):
                  mock.call('/redfish/v1/Systems/1',
                            data={'Boot':
                                  {'BootSourceOverrideTarget': 'UefiTarget',
-                                  'BootSourceOverrideEnabled': 'Continuous'}})]
+                                  'BootSourceOverrideEnabled': 'Continuous'}},
+                           headers=None)]
         self.sys_inst._conn.patch.assert_has_calls(calls)
 
     def test_update_persistent_boot_uefi_no_iscsi_device(self):
