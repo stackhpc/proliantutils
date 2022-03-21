@@ -570,7 +570,6 @@ class IloOperations(object):
         """
         raise exception.IloCommandNotSupportedError(ERRMSG)
 
-        # This method is deprecated, and will be removed in future release.
     def create_csr(self, path, csr_params):
         """Creates the Certificate Signing Request.
 
@@ -581,7 +580,6 @@ class IloOperations(object):
         """
         raise exception.IloCommandNotSupportedError(ERRMSG)
 
-    # This method is deprecated, and will be removed in future release.
     def add_https_certificate(self, cert_file):
         """Adds the signed https certificate to the iLO.
 
@@ -590,6 +588,7 @@ class IloOperations(object):
         """
         raise exception.IloCommandNotSupportedError(ERRMSG)
 
+    # This method is deprecated, and will be removed in future release.
     def add_ssl_certificate(self, csr_params, signed_cert,
                             private_key, pass_phrase):
         """Creates CSR and adds the signed SSL certificate to the iLO.
