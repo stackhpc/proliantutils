@@ -1034,7 +1034,6 @@ class IloClient(operations.IloOperations):
         """
         return self._call_method('update_secure_boot', enable, ignore)
 
-    # This method is deprecated, and will be removed in future release.
     def create_csr(self, path, csr_params):
         """Creates the Certificate Signing Request.
 
@@ -1045,7 +1044,6 @@ class IloClient(operations.IloOperations):
         """
         return self._call_method('create_csr', path, csr_params)
 
-    # This method is deprecated, and will be removed in future release.
     def add_https_certificate(self, cert_file):
         """Adds the signed https certificate to the iLO.
 
@@ -1054,6 +1052,7 @@ class IloClient(operations.IloOperations):
         """
         return self._call_method('add_https_certificate', cert_file)
 
+    # This method is deprecated, and will be removed in future release.
     def add_ssl_certificate(self, csr_params, signed_cert,
                             private_key, pass_phrase):
         """Creates CSR and adds the signed SSL certificate to the iLO.
