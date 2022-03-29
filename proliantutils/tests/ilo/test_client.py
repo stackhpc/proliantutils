@@ -1454,6 +1454,6 @@ class IloRedfishClientTestCase(testtools.TestCase):
             self.assertEqual('set_iscsi_info',
                              even_more_missed_operations[0])
         else:
-            self.assertEqual(3, len(even_more_missed_operations))
-            self.assertEqual(len(client.SUPPORTED_REDFISH_METHODS) - 3,
+            self.assertEqual(2, len(even_more_missed_operations))
+            self.assertEqual(len(client.SUPPORTED_REDFISH_METHODS) - 2,
                              validate_method_calls.no_test_cases)
