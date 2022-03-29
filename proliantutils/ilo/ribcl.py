@@ -1271,6 +1271,24 @@ class RIBCLOperations(operations.IloOperations):
         """
         self._raise_command_not_supported("get_bios_settings_result")
 
+    def create_csr(self, path, csr_params):
+        """Creates the Certificate Signing Request.
+
+        :param path: directory to store csr file.
+        :param csr_params: A dictionary containing all the necessary
+               information required to create CSR.
+        :raises: IloError, on an error from iLO.
+        """
+        self._raise_command_not_supported("create_csr")
+
+    def add_https_certificate(self, cert_file):
+        """Adds the signed https certificate to the iLO.
+
+        :param cert_file: Signed HTTPS certificate file.
+        :raises: IloError, on an error from iLO.
+        """
+        self._raise_command_not_supported("add_https_certificate")
+
 
 # The below block of code is there only for backward-compatibility
 # reasons (before commit 47608b6 for ris-support).

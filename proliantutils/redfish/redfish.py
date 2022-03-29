@@ -16,6 +16,7 @@ __author__ = 'HPE'
 
 from base64 import b64decode
 import json
+import os
 import re
 import subprocess
 import tempfile
@@ -27,6 +28,7 @@ import sushy
 from sushy import utils
 
 from proliantutils import exception
+from proliantutils.ilo import common
 from proliantutils.ilo import constants as ilo_cons
 from proliantutils.ilo import firmware_controller
 from proliantutils.ilo import operations
@@ -890,7 +892,7 @@ class RedfishOperations(operations.IloOperations):
             LOG.debug(msg)
             raise exception.IloError(msg)
 
-    def create_csr(self, csr_params):
+    def _create_csr(self, csr_params):
         """Creates the Certificate Signing Request.
 
         :param csr_params: A dictionary containing all the necessary
@@ -928,7 +930,7 @@ class RedfishOperations(operations.IloOperations):
         :param pass_phrase: Pass phrase for the private key.
         :raises: IloError, on an error from iLO.
         """
-        csr_file = self.create_csr(csr_params)
+        csr_file = self._create_csr(csr_params)
 
         (fd, temp_file) = tempfile.mkstemp(suffix='.ext')
         (fd, https_cert_file) = tempfile.mkstemp(suffix='.crt')
@@ -979,7 +981,78 @@ class RedfishOperations(operations.IloOperations):
             LOG.debug(msg)
             raise exception.CertificateCreationError(msg)
 
-        self.add_https_certificate(https_cert_file)
+        self._add_https_certificate(https_cert_file)
+
+    def _add_https_certificate(self, cert_file):
+        """Adds the signed https certificate to the iLO.
+
+        :param certificate: Signed HTTPS certificate file.
+        :raises: IloError, on an error from iLO.
+        """
+        sushy_man = self._get_sushy_manager(PROLIANT_MANAGER_ID)
+        try:
+            with open(cert_file, 'r') as f:
+                data = json.dumps(f.read())
+            p = re.sub(r"\"", "", data)
+            q = re.sub(r"\\n", "\r\n", p).rstrip()
+
+            c_list = re.findall(_CERTIFICATE_PATTERN, q, re.DOTALL)
+
+            if len(c_list) == 0:
+                msg = (self._("No valid certificate in %(cert_file)s.") %
+                       {"cert_file": cert_file})
+                LOG.debug(msg)
+                raise exception.IloError(msg)
+
+            cert = c_list[0]
+            sushy_man.securityservice.https_certificate_uri.import_certificate(
+                cert)
+            common.wait_for_ilo_after_reset(self)
+        except sushy.exceptions.SushyError as e:
+            msg = (self._('The Redfish controller failed to import the '
+                          'given certificate. '
+                          'Error: %(error)s') % {'error': str(e)})
+            LOG.debug(msg)
+            raise exception.IloError(msg)
+
+    def create_csr(self, path, csr_params):
+        """Creates the Certificate Signing Request.
+
+        :param path: directory to store csr file.
+        :param csr_params: A dictionary containing all the necessary
+               information required to create CSR.
+        :raises: IloError, on an error from iLO.
+        """
+        sushy_man = self._get_sushy_manager(PROLIANT_MANAGER_ID)
+        try:
+            cert_request = (
+                sushy_man.securityservice.https_certificate_uri.generate_csr(
+                    csr_params))
+
+            if not os.path.exists(path):
+                os.makedirs(path, 0o755)
+
+            # Create the file name as "<ip_address>.csr". Here ip address
+            # will have the "-" instead of "." in the file name.
+
+            ip = self.host
+            ip_split = ip.split('.')
+            csr_file_name = ""
+            for x in ip_split:
+                csr_file_name = csr_file_name + x + '-'
+            csr_file_name = csr_file_name[:-1]
+            csr_file = path + csr_file_name + '.csr'
+
+            with open(csr_file, 'w') as f:
+                f.write(cert_request)
+            os.chmod(csr_file, 0o755)
+
+        except sushy.exceptions.SushyError as e:
+            msg = (self._('The Redfish controller failed to create the '
+                          'certificate signing request. '
+                          'Error %(error)s') % {'error': str(e)})
+            LOG.debug(msg)
+            raise exception.IloError(msg)
 
     def add_https_certificate(self, cert_file):
         """Adds the signed https certificate to the iLO.
@@ -1005,6 +1078,7 @@ class RedfishOperations(operations.IloOperations):
             cert = c_list[0]
             sushy_man.securityservice.https_certificate_uri.import_certificate(
                 cert)
+            common.wait_for_ilo_after_reset(self)
         except sushy.exceptions.SushyError as e:
             msg = (self._('The Redfish controller failed to import the '
                           'given certificate. '
