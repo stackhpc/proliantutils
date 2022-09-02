@@ -1032,16 +1032,8 @@ class RedfishOperations(operations.IloOperations):
             if not os.path.exists(path):
                 os.makedirs(path, 0o755)
 
-            # Create the file name as "<ip_address>.csr". Here ip address
-            # will have the "-" instead of "." in the file name.
-
-            ip = self.host
-            ip_split = ip.split('.')
-            csr_file_name = ""
-            for x in ip_split:
-                csr_file_name = csr_file_name + x + '-'
-            csr_file_name = csr_file_name[:-1]
-            csr_file = path + csr_file_name + '.csr'
+            csr_file_name = os.path.basename(path)
+            csr_file = os.path.join(path, csr_file_name + '.csr')
 
             with open(csr_file, 'w') as f:
                 f.write(cert_request)
