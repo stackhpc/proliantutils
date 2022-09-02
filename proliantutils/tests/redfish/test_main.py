@@ -16,6 +16,7 @@
 import json
 from unittest import mock
 
+from sushy import auth as sushy_auth
 import testtools
 
 from proliantutils import exception
@@ -29,8 +30,9 @@ from proliantutils.redfish.resources import update_service
 
 class HPESushyTestCase(testtools.TestCase):
 
+    @mock.patch.object(sushy_auth, 'SessionOrBasicAuth', autospec=True)
     @mock.patch.object(connector, 'HPEConnector', autospec=True)
-    def setUp(self, connector_mock):
+    def setUp(self, connector_mock, mock_auth):
         super(HPESushyTestCase, self).setUp()
         with open('proliantutils/tests/redfish/'
                   'json_samples/root.json', 'r') as f:
