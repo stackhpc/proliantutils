@@ -183,7 +183,7 @@ class HPESystemTestCase(testtools.TestCase):
                            data={'Boot':
                                  {'BootSourceOverrideTarget': 'UefiTarget',
                                   'BootSourceOverrideEnabled': 'Continuous'}},
-                           headers=None)]
+                           etag=None)]
         self.sys_inst._conn.patch.assert_has_calls(calls)
 
     def test_update_persistent_boot_uefi_no_iscsi_device(self):
