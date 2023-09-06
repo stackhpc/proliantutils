@@ -23,6 +23,7 @@ import tempfile
 
 from OpenSSL.crypto import FILETYPE_ASN1
 from OpenSSL.crypto import load_certificate
+import retrying
 from six.moves.urllib import parse
 import sushy
 from sushy import utils
@@ -46,11 +47,14 @@ from proliantutils import utils as common_utils
 Class specific for Redfish APIs.
 """
 
+MAX_RETRY_ATTEMPTS = 3  # Maximum number of attempts to be retried
+MAX_TIME_BEFORE_RETRY = 7 * 1000  # wait time in milliseconds before retry
+
 GET_POWER_STATE_MAP = {
     sushy.SYSTEM_POWER_STATE_ON: 'ON',
-    sushy.SYSTEM_POWER_STATE_POWERING_ON: 'ON',
+    sushy.SYSTEM_POWER_STATE_POWERING_ON: 'PoweringOn',
     sushy.SYSTEM_POWER_STATE_OFF: 'OFF',
-    sushy.SYSTEM_POWER_STATE_POWERING_OFF: 'OFF'
+    sushy.SYSTEM_POWER_STATE_POWERING_OFF: 'PoweringOff'
 }
 
 POWER_RESET_MAP = {
@@ -264,6 +268,46 @@ class RedfishOperations(operations.IloOperations):
         sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
         return GET_POWER_STATE_MAP.get(sushy_system.power_state)
 
+    def _perform_power_op(self, power):
+        """This method performs power operation.
+
+        :param: power : target power state
+        """
+        sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
+        try:
+            sushy_system.reset_system(POWER_RESET_MAP[power])
+        except sushy.exceptions.SushyError as e:
+            msg = (self._('The Redfish controller failed to set power state '
+                          'of server to %(target_value)s. Error %(error)s') %
+                   {'target_value': power, 'error': str(e)})
+            LOG.debug(msg)
+            raise exception.IloError(msg)
+
+    @retrying.retry(
+        stop_max_attempt_number=MAX_RETRY_ATTEMPTS,
+        retry_on_result=lambda state: state != 'ON',
+        wait_fixed=MAX_TIME_BEFORE_RETRY
+    )
+    def _retry_until_powered_on(self, power):
+        """This method retries power on operation.
+
+        :param: power : target power state
+        """
+        # If the system is in the same power state as
+        # requested by the user, it gives the error
+        # InvalidOperationForSystemState. To avoid this error
+        # the power state is checked before power on
+        # operation is performed.
+        status = self.get_host_power_status()
+        allowed_states = ['ON', 'PoweringOn']
+        if power == "OFF":
+            allowed_states = ['OFF', 'PoweringOff']
+        if (status != power or status not in allowed_states or status is None):
+            self._perform_power_op(power)
+            return self.get_host_power_status()
+        else:
+            return status
+
     def reset_server(self):
         """Resets the server.
 
@@ -302,9 +346,8 @@ class RedfishOperations(operations.IloOperations):
                              "state."), {'target_value': target_value})
             return
 
-        sushy_system = self._get_sushy_system(PROLIANT_SYSTEM_ID)
         try:
-            sushy_system.reset_system(POWER_RESET_MAP[target_value])
+            self._retry_until_powered_on(target_value)
         except sushy.exceptions.SushyError as e:
             msg = (self._('The Redfish controller failed to set power state '
                           'of server to %(target_value)s. Error %(error)s') %

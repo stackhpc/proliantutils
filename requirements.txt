@@ -11,5 +11,5 @@ pyasn1-lextudio>=1.1.0 # BSD
 pyasn1-modules-lextudio>=0.2.0 # BSD
 
 # Redfish communication uses the Sushy library
-sushy>=4.4.0
+sushy>=4.5.0
 pyOpenSSL>=19.1.0

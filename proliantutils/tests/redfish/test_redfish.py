@@ -139,16 +139,55 @@ class RedfishOperationsTestCase(testtools.TestCase):
             'The Redfish controller failed to set power state of server to ON',
             self.rf_client.set_host_power, 'ON')
 
-    def test_set_host_power_invalid_input(self):
+    @mock.patch.object(redfish.RedfishOperations, 'get_host_power_status')
+    def test_set_host_power_invalid_input(self, host_power_status_mock):
         self.assertRaisesRegex(
             exception.InvalidInputError,
             'The parameter "target_value" value "Off" is invalid.',
             self.rf_client.set_host_power, 'Off')
 
     @mock.patch.object(redfish.RedfishOperations, 'get_host_power_status')
-    def test_set_host_power_change(self, get_host_power_status_mock):
-        get_host_power_status_mock.return_value = 'OFF'
+    def test_set_host_power_exc(self, host_power_status_mock):
+        self.assertRaises(exception.InvalidInputError,
+                          self.rf_client.set_host_power, 'invalid')
+
+    @mock.patch.object(redfish.RedfishOperations, 'get_host_power_status')
+    @mock.patch.object(redfish.RedfishOperations, '_retry_until_powered_on')
+    def test_set_host_power_off(self, retry_mock, host_power_status_mock):
+        host_power_status_mock.return_value = 'ON'
+        self.rf_client.set_host_power('OFF')
+        host_power_status_mock.assert_called_once_with()
+        self.assertTrue(retry_mock.called)
+
+    @mock.patch.object(redfish.RedfishOperations, '_perform_power_op')
+    @mock.patch.object(redfish.RedfishOperations, 'get_host_power_status')
+    @mock.patch.object(redfish.RedfishOperations, '_retry_until_powered_on')
+    def test_set_host_power_on(self, retry_mock, host_power_status_mock,
+                               perform_power_op_mock):
+        host_power_status_mock.return_value = 'OFF'
         self.rf_client.set_host_power('ON')
+        host_power_status_mock.assert_called_once_with()
+        self.assertFalse(perform_power_op_mock.called)
+        self.assertTrue(retry_mock.called)
+
+    @mock.patch.object(redfish.RedfishOperations, '_perform_power_op')
+    @mock.patch.object(redfish.RedfishOperations, 'get_host_power_status')
+    def test_retry_until_powered_on_3times(self, host_power_status_mock,
+                                           perform_power_mock):
+        host_power_status_mock.side_effect = ['OFF', 'OFF', 'ON']
+        self.rf_client._retry_until_powered_on('ON')
+        self.assertEqual(3, host_power_status_mock.call_count)
+
+    @mock.patch.object(redfish.RedfishOperations, '_perform_power_op')
+    @mock.patch.object(redfish.RedfishOperations, 'get_host_power_status')
+    def test_retry_until_powered_on(self, host_power_status_mock,
+                                    perform_power_mock):
+        host_power_status_mock.return_value = 'ON'
+        self.rf_client._retry_until_powered_on('ON')
+        self.assertEqual(1, host_power_status_mock.call_count)
+
+    def test_perform_power_op(self):
+        self.rf_client._perform_power_op("ON")
         self.sushy.get_system().reset_system.assert_called_once_with(
             sushy.RESET_ON)
 
