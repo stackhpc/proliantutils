@@ -11,5 +11,5 @@ pyasn1>=0.5.1 # BSD
 pyasn1-modules>=0.3.0 # BSD
 
 # Redfish communication uses the Sushy library
-sushy>=4.5.0
+sushy>=4.5.2
 pyOpenSSL>=19.1.0
