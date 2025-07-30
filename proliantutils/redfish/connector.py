@@ -36,7 +36,8 @@ class HPEConnector(connector.Connector):
         stop_max_attempt_number=MAX_RETRY_ATTEMPTS,
         wait_fixed=MAX_TIME_BEFORE_RETRY)
     def _op(self, method, path='', data=None, headers=None,
-            blocking=False, timeout=60):
+            blocking=False, timeout=60, server_side_retries_left=None,
+            allow_reauth=True, **kwargs):
         """Overrides the base method to support retrying the operation.
 
         :param method: The HTTP method to be used, e.g: GET, POST,
@@ -46,16 +47,37 @@ class HPEConnector(connector.Connector):
         :param headers: Optional dictionary of headers.
         :param blocking: Whether to block for asynchronous operations.
         :param timeout: Max time in seconds to wait for blocking async call.
+        :param server_side_retries_left: Remaining retries. If not provided
+            will use limit provided by instance's server_side_retries
+        :param allow_reauth: Whether to allow refreshing the authentication
+            token.
+        :param **kwargs: Catchall to improve compatability if parent class
+            changes -- unsued.
         :returns: The response from the connector.Connector's _op method.
         """
-        resp = super(HPEConnector, self)._op(method, path, data=data,
-                                             headers=headers,
-                                             blocking=blocking,
-                                             timeout=timeout,
-                                             allow_redirects=False)
+        resp = super(HPEConnector, self)._op(
+            method=method,
+            path=path,
+            data=data,
+            headers=headers,
+            blocking=blocking,
+            timeout=timeout,
+            server_side_retries_left=server_side_retries_left,
+            allow_reauth=allow_reauth,
+            allow_redirects=False
+        )
         # With IPv6, Gen10 server gives redirection response with new path with
         # a prefix of '/' so this check is required
         if resp.status_code == 308:
             path = urlparse(resp.headers['Location']).path
-            resp = super(HPEConnector, self)._op(method, path, data, headers)
+            resp = super(HPEConnector, self)._op(
+                method=method,
+                path=path,
+                data=data,
+                headers=headers,
+                blocking=blocking,
+                timeout=timeout,
+                server_side_retries_left=server_side_retries_left,
+                allow_reauth=allow_reauth
+            )
         return resp
